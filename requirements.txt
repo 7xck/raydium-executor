@@ -13,7 +13,7 @@ based58==0.1.1
 black==22.6.0
 borsh-construct==0.1.0
 cachetools==4.2.4
-ccxt==1.91.26
+#ccxt==1.91.26
 certifi==2022.6.15
 cffi==1.15.1
 charset-normalizer==2.1.0

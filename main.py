@@ -4,9 +4,6 @@ import traceback
 from typing import Any
 import time
 
-from loguru import logger
-
-from CEX import CEX
 from raydium_amm import Liquidity
 from utils import purchase_info, sale_info
 
@@ -16,10 +13,10 @@ with open("config.json") as f:
 
 
 async def main():
-    size = 0.5
+    size = 0.1
     amm = Liquidity(
         "https://api.mainnet-beta.solana.com",
-        "5wyH6cE9qaNmxw9HyM2WVHZkQDXyrFVSgEMCDksbfjUP",
+        "6vFwFEuo6MMsfUrCkDeuAPxDVdDCU7EAGWPVm8NxQpBo",
         config["private_key"],
         "coin/sol",
     )
