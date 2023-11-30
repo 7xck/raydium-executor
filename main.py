@@ -15,10 +15,11 @@ with open("config.json") as f:
 async def main():
     size = 0.1
     amm = Liquidity(
-        "https://api.mainnet-beta.solana.com",
-        "6vFwFEuo6MMsfUrCkDeuAPxDVdDCU7EAGWPVm8NxQpBo",
-        config["private_key"],
-        "coin/sol",
+        "https://api.mainnet-beta.solana.com",  # rpc
+        "78Hxx96hJTW2LLt9zKmbtnjs1QoeKGVrBqXkdaKy7JhV",  # pool id
+        config["private_key"],  # private key
+        "coin/sol",  # placeholder
+        "6oUeuqRWSRnFddVVgPMaUVhDsTvVGhTSm7yDj6a1oiZR",  # my wallet address
     )
     coin_balances = await amm.get_balance()
     sol_before = coin_balances["sol"]

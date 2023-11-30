@@ -12,6 +12,10 @@ from solana.transaction import TransactionInstruction, AccountMeta, Transaction
 from layouts import SWAP_LAYOUT, POOL_INFO_LAYOUT
 from utils import fetch_pool_keys, get_token_account
 
+# from create_token_address import create_account
+import subprocess
+import shlex
+
 SERUM_VERSION = 3
 AMM_PROGRAM_VERSION = 4
 
@@ -53,19 +57,52 @@ def compute_buy_price(pool_info):
 
 
 class Liquidity:
-    def __init__(self, rpc_endpoint: str, pool_id: str, secret_key: str, symbol: str):
+    def __init__(
+        self,
+        rpc_endpoint: str,
+        pool_id: str,
+        secret_key: str,
+        symbol: str,
+        wallet_address: str,
+    ):
         self.endpoint = rpc_endpoint
         self.conn = AsyncClient(self.endpoint, commitment=Commitment("confirmed"))
         self.pool_id = pool_id
         self.pool_keys = fetch_pool_keys(self.pool_id)
         self.owner = Keypair.from_secret_key(base58.b58decode(secret_key))
-        self.base_token_account = get_token_account(
-            self.endpoint, self.owner.public_key, self.pool_keys["base_mint"]
-        )
-        self.quote_token_account = get_token_account(
-            self.endpoint, self.owner.public_key, self.pool_keys["quote_mint"]
-        )
+        self.wallet_address = wallet_address
         self.base_symbol, self.quote_symbol = symbol.split("/")
+
+        try:
+            self.base_token_account = get_token_account(
+                self.endpoint, self.owner.public_key, self.pool_keys["base_mint"]
+            )
+        except:
+            # create token account first
+            command = f"""/bin/bash -c 'source /Users/chad/miniforge3/bin/activate base && python create_token_address.py {secret_key} {wallet_address} {self.pool_keys["program_id"]} {self.pool_keys["str_base_mint"]}'"""
+            # Use shlex to split the command correctly
+            args = shlex.split(command)
+            args
+            # Run the subprocess
+            result = subprocess.run(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            )
+        finally:
+            self.base_token_account = get_token_account(
+                self.endpoint, self.owner.public_key, self.pool_keys["base_mint"]
+            )
+        try:
+            self.quote_token_account = get_token_account(
+                self.endpoint, self.owner.public_key, self.pool_keys["quote_mint"]
+            )
+        except:
+            command = f'source /Users/chad/miniforge3/bin/activate base; python3 create_token_address.py {secret_key} {wallet_address} {self.pool_keys["program_id"]} {self.pool_keys["str_quote_mint"]}'
+            # Use shlex to split the command correctly
+            args = shlex.split(command)
+            # Run the subprocess
+            result = subprocess.run(
+                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            )
 
     def open(self):
         self.conn = AsyncClient(self.endpoint, commitment=Commitment("confirmed"))

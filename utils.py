@@ -36,6 +36,9 @@ def fetch_pool_keys(pool_id: str):
         "bids": PublicKey(amm_info["marketBids"]),
         "asks": PublicKey(amm_info["marketAsks"]),
         "event_queue": PublicKey(amm_info["marketEventQueue"]),
+        "program_id": amm_info["programId"],
+        "str_quote_mint": amm_info["quoteMint"],
+        "str_base_mint": amm_info["baseMint"],
     }
 
 
