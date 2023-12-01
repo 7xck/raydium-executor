@@ -1,67 +1,87 @@
 import asyncio
 import json
+import sys
+import time
 import traceback
 from typing import Any
-import time
 
 from raydium_amm import Liquidity
 
-# read json config file
-with open("config.json") as f:
-    config = json.load(f)
+# Configuration file for setup
+CONFIG_FILE = "config.json"
 
-# read in command line arg and set it as pool_id
-import sys
+# Default Pool ID if not provided as command line argument
+DEFAULT_POOL_ID = "Dz2sTsKhaSPJLjTh5ZeSufeQrQixqsAjFhwz9hxH7h3D"
 
-try:
-    pool_id = sys.argv[1]
-except:
-    pool_id = "Dz2sTsKhaSPJLjTh5ZeSufeQrQixqsAjFhwz9hxH7h3D"
+
+def load_config(file_path: str) -> Any:
+    """Load configuration from a JSON file."""
+    with open(file_path) as file:
+        return json.load(file)
+
+
+def get_pool_id() -> str:
+    """Retrieve the pool ID from command line arguments or use default."""
+    try:
+        return sys.argv[1]
+    except IndexError:
+        return DEFAULT_POOL_ID
 
 
 async def main():
-    size = 1
+    config = load_config(CONFIG_FILE)
+    pool_id = get_pool_id()
+
     amm = Liquidity(
         config["rpc"],
-        # "https://api.mainnet-beta.solana.com",  # rpc
-        pool_id,  # pool id
-        config["private_key"],  # private key
-        "coin/sol",  # placeholder
-        config["wallet_add"],  # my wallet address
+        pool_id,
+        config["private_key"],
+        "coin/sol",
+        config["wallet_add"],
     )
+
     coin_balances = await amm.get_balance()
     sol_before = coin_balances["sol"]
+
+    # Attempt to buy
+    size = 1
     while True:
         try:
             await amm.buy(size)
             break
-        except:
+        except Exception as e:
             traceback.print_exc()
-            print("failed b")
+            print("Failed to buy: retrying...")
             continue
-    print("bought ", size)
+
+    print("Bought", size)
     time.sleep(10)
+
+    # Get balances and sell
     coin_balances = await amm.get_balance()
-    print(coin_balances)
     sell_size = coin_balances["coin"]
     time.sleep(6)
     tries = 0
+
     while True:
         try:
             await amm.sell(sell_size)
             break
-        except:
+        except Exception as e:
             time.sleep(0.4)
             tries += 1
-            print("failed s", tries)
+            print(f"Failed to sell, attempt {tries}")
             continue
-    print("sold", sell_size)
+
+    print("Sold", sell_size)
     time.sleep(5)
+
+    # Calculate and display profit
     coin_balances = await amm.get_balance()
     sol_after = coin_balances["sol"]
     print({"before": sol_before}, {"after": sol_after})
     print({"profit": sol_after - sol_before})
-    print("return, ", sol_after / sol_before - 1)
+    print("Return:", sol_after / sol_before - 1)
 
 
 if __name__ == "__main__":
