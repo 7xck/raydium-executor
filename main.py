@@ -5,30 +5,57 @@ from typing import Any
 import time
 
 from raydium_amm import Liquidity
-from utils import purchase_info, sale_info
 
 # read json config file
 with open("config.json") as f:
     config = json.load(f)
 
+# read in command line arg and set it as pool_id
+import sys
+
+try:
+    pool_id = sys.argv[1]
+except:
+    pool_id = "Dz2sTsKhaSPJLjTh5ZeSufeQrQixqsAjFhwz9hxH7h3D"
+
 
 async def main():
-    size = 0.1
+    size = 1
     amm = Liquidity(
-        "https://api.mainnet-beta.solana.com",  # rpc
-        "78Hxx96hJTW2LLt9zKmbtnjs1QoeKGVrBqXkdaKy7JhV",  # pool id
+        config["rpc"],
+        # "https://api.mainnet-beta.solana.com",  # rpc
+        pool_id,  # pool id
         config["private_key"],  # private key
         "coin/sol",  # placeholder
-        "6oUeuqRWSRnFddVVgPMaUVhDsTvVGhTSm7yDj6a1oiZR",  # my wallet address
+        config["wallet_add"],  # my wallet address
     )
     coin_balances = await amm.get_balance()
     sol_before = coin_balances["sol"]
-
-    await amm.buy(size)
-    time.sleep(5)
+    while True:
+        try:
+            await amm.buy(size)
+            break
+        except:
+            traceback.print_exc()
+            print("failed b")
+            continue
+    print("bought ", size)
+    time.sleep(10)
     coin_balances = await amm.get_balance()
+    print(coin_balances)
     sell_size = coin_balances["coin"]
-    await amm.sell(sell_size)
+    time.sleep(6)
+    tries = 0
+    while True:
+        try:
+            await amm.sell(sell_size)
+            break
+        except:
+            time.sleep(0.4)
+            tries += 1
+            print("failed s", tries)
+            continue
+    print("sold", sell_size)
     time.sleep(5)
     coin_balances = await amm.get_balance()
     sol_after = coin_balances["sol"]

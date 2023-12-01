@@ -22,8 +22,10 @@ AMM_PROGRAM_VERSION = 4
 AMM_PROGRAM_ID = PublicKey("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8")
 TOKEN_PROGRAM_ID = PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
 SERUM_PROGRAM_ID = PublicKey(
+    # "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
     "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"
 )  # PublicKey("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin")
+ALTERNATE_SERUM_ID = PublicKey("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin")
 
 LIQUIDITY_FEES_NUMERATOR = 25
 LIQUIDITY_FEES_DENOMINATOR = 10000
@@ -79,7 +81,7 @@ class Liquidity:
             )
         except:
             # create token account first
-            command = f"""/bin/bash -c 'source /Users/chad/miniforge3/bin/activate base && python create_token_address.py {secret_key} {wallet_address} {self.pool_keys["program_id"]} {self.pool_keys["str_base_mint"]}'"""
+            command = f"""/bin/bash -c 'source /home/ubuntu/raydium-executor/env_wallet/bin/activate && python create_token_address.py {secret_key} {wallet_address} {self.pool_keys["program_id"]} {self.pool_keys["str_base_mint"]}'"""
             # Use shlex to split the command correctly
             args = shlex.split(command)
             args
@@ -87,7 +89,6 @@ class Liquidity:
             result = subprocess.run(
                 args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
             )
-        finally:
             self.base_token_account = get_token_account(
                 self.endpoint, self.owner.public_key, self.pool_keys["base_mint"]
             )
@@ -96,12 +97,17 @@ class Liquidity:
                 self.endpoint, self.owner.public_key, self.pool_keys["quote_mint"]
             )
         except:
-            command = f'source /Users/chad/miniforge3/bin/activate base; python3 create_token_address.py {secret_key} {wallet_address} {self.pool_keys["program_id"]} {self.pool_keys["str_quote_mint"]}'
+            # create token account first
+            command = f"""/bin/bash -c 'source /home/ubuntu/raydium-executor/env_wallet/bin/activate && python create_token_address.py {secret_key} {wallet_address} {self.pool_keys["program_id"]} {self.pool_keys["str_quote_mint"]}'"""
             # Use shlex to split the command correctly
             args = shlex.split(command)
+            args
             # Run the subprocess
             result = subprocess.run(
                 args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            )
+            self.quote_token_account = get_token_account(
+                self.endpoint, self.owner.public_key, self.pool_keys["quote_mint"]
             )
 
     def open(self):
@@ -140,6 +146,7 @@ class Liquidity:
         token_account_in: PublicKey,
         token_account_out: PublicKey,
         accounts: dict,
+        serum_program_id=SERUM_PROGRAM_ID,
     ) -> TransactionInstruction:
         keys = [
             AccountMeta(pubkey=TOKEN_PROGRAM_ID, is_signer=False, is_writable=False),
@@ -159,7 +166,7 @@ class Liquidity:
             AccountMeta(
                 pubkey=accounts["quote_vault"], is_signer=False, is_writable=True
             ),
-            AccountMeta(pubkey=SERUM_PROGRAM_ID, is_signer=False, is_writable=False),
+            AccountMeta(pubkey=serum_program_id, is_signer=False, is_writable=False),
             AccountMeta(
                 pubkey=accounts["market_id"], is_signer=False, is_writable=True
             ),
@@ -188,12 +195,12 @@ class Liquidity:
         )
         return TransactionInstruction(keys, AMM_PROGRAM_ID, data)
 
-    async def buy(self, amount):
+    async def buy(self, amount, decimals="quote_decimals"):
         swap_tx = Transaction()
         signers = [self.owner]
         token_account_in = self.quote_token_account
         token_account_out = self.base_token_account
-        amount_in = amount * 10 ** self.pool_keys["quote_decimals"]
+        amount_in = amount * 10 ** self.pool_keys[decimals]
         swap_tx.add(
             self.make_swap_instruction(
                 amount_in, token_account_in, token_account_out, self.pool_keys
@@ -201,18 +208,39 @@ class Liquidity:
         )
         return await self.conn.send_transaction(swap_tx, *signers)
 
-    async def sell(self, amount):
-        swap_tx = Transaction()
-        signers = [self.owner]
-        token_account_in = self.base_token_account
-        token_account_out = self.quote_token_account
-        amount_in = amount * 10 ** self.pool_keys["base_decimals"]
-        swap_tx.add(
-            self.make_swap_instruction(
-                amount_in, token_account_in, token_account_out, self.pool_keys
+    async def sell(self, amount, decimals="base_decimals"):
+        try:
+            swap_tx = Transaction()
+            signers = [self.owner]
+            token_account_in = self.base_token_account
+            token_account_out = self.quote_token_account
+            amount_in = amount * 10 ** self.pool_keys[decimals]
+            swap_tx.add(
+                self.make_swap_instruction(
+                    amount_in,
+                    token_account_in,
+                    token_account_out,
+                    self.pool_keys,
+                    SERUM_PROGRAM_ID,
+                )
             )
-        )
-        return await self.conn.send_transaction(swap_tx, *signers)
+            return await self.conn.send_transaction(swap_tx, *signers)
+        except:
+            swap_tx = Transaction()
+            signers = [self.owner]
+            token_account_in = self.base_token_account
+            token_account_out = self.quote_token_account
+            amount_in = amount * 10 ** self.pool_keys[decimals]
+            swap_tx.add(
+                self.make_swap_instruction(
+                    amount_in,
+                    token_account_in,
+                    token_account_out,
+                    self.pool_keys,
+                    ALTERNATE_SERUM_ID,
+                )
+            )
+            return await self.conn.send_transaction(swap_tx, *signers)
 
     async def simulate_get_market_info(self):
         recent_block_hash = (await self.conn.get_recent_blockhash())["result"]["value"][
