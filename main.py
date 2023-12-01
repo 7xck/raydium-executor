@@ -1,11 +1,8 @@
 import asyncio
 import sys
 import time
-import traceback
 from models.trade_results import TradeResults
 from utils.utils import load_config
-import threading
-from concurrent.futures import ThreadPoolExecutor
 
 from exchanges.raydium_amm import Liquidity
 
@@ -125,29 +122,24 @@ def execute_job(pool_id, size, trade_open_time, trade_length):
 
 
 def main():
-    with ThreadPoolExecutor(max_workers=5) as executor:  # Adjust max_workers as needed
-        while True:
-            pool_id = input("INPUT: ")
-            if pool_id.lower() == "quit":
-                break
+    pool_id = sys.argv[1]
 
-            if "size:" in pool_id:
-                size = float(pool_id.split(":")[1])
-            else:
-                size = 1
+    # Default values
+    size = 1
+    trade_open_time = -100
+    trade_length = 20
 
-            if "time:" in pool_id:
-                trade_open_time = float(pool_id.split(":")[1])
-            else:
-                trade_open_time = -100
+    # Process each argument for optional parameters
+    for arg in sys.argv[2:]:
+        if arg.startswith("size:"):
+            size = float(arg.split(":")[1])
+        elif arg.startswith("time:"):
+            trade_open_time = float(arg.split(":")[1])
+        elif arg.startswith("length:"):
+            trade_length = float(arg.split(":")[1])
 
-            if "length:" in pool_id:
-                trade_length = float(pool_id.split(":")[1])
-            else:
-                trade_length = 20
-
-            # Submit a new job to the executor
-            executor.submit(execute_job, pool_id, size, trade_open_time, trade_length)
+    # Submit a new job to the executor
+    execute_job(pool_id, size, trade_open_time, trade_length)
 
 
 if __name__ == "__main__":
