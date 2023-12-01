@@ -3,6 +3,13 @@ from loguru import logger
 from solana.publickey import PublicKey
 from solana.rpc.api import Client
 from solana.rpc.types import TokenAccountOpts
+import json
+
+
+def load_config(file_path: str):
+    """Load configuration from a JSON file."""
+    with open(file_path) as file:
+        return json.load(file)
 
 
 def extract_pool_info(pools_list: list, pool_id: str) -> dict:
@@ -13,9 +20,11 @@ def extract_pool_info(pools_list: list, pool_id: str) -> dict:
 
 
 def fetch_pool_keys(pool_id: str):
-    pools = requests.get("https://api.raydium.io/v2/sdk/liquidity/mainnet.json").json()[
-        "unOfficial"
-    ]
+    all_pools = requests.get(
+        "https://api.raydium.io/v2/sdk/liquidity/mainnet.json"
+    ).json()
+    pools = all_pools["official"] + all_pools["unOfficial"]
+
     amm_info = extract_pool_info(pools, pool_id)
     return {
         "amm_id": PublicKey(pool_id),

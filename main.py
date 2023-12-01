@@ -1,23 +1,20 @@
 import asyncio
-import json
 import sys
 import time
 import traceback
-from typing import Any
+from models.trade_results import TradeResults
+from utils.utils import load_config
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 from exchanges.raydium_amm import Liquidity
 
 # Configuration file for setup
 CONFIG_FILE = "config.json"
+config = load_config(CONFIG_FILE)
 
 # Default Pool ID if not provided as command line argument
-DEFAULT_POOL_ID = "Dz2sTsKhaSPJLjTh5ZeSufeQrQixqsAjFhwz9hxH7h3D"
-
-
-def load_config(file_path: str) -> Any:
-    """Load configuration from a JSON file."""
-    with open(file_path) as file:
-        return json.load(file)
+DEFAULT_POOL_ID = "AVs9TA4nWDzfPJE9gGVNJMVhcQy3V9PGazuz33BfG2RA"
 
 
 def get_pool_id() -> str:
@@ -28,61 +25,130 @@ def get_pool_id() -> str:
         return DEFAULT_POOL_ID
 
 
-async def main():
-    config = load_config(CONFIG_FILE)
-    pool_id = get_pool_id()
-
+def make_amm(pool_id, symbol="coin/sol"):
     amm = Liquidity(
         config["rpc"],
         pool_id,
         config["private_key"],
-        "coin/sol",
+        symbol,
         config["wallet_add"],
     )
 
-    coin_balances = await amm.get_balance()
-    sol_before = coin_balances["sol"]
+    return amm
 
-    # Attempt to buy
-    size = 1
-    while True:
-        try:
-            await amm.buy(size)
-            break
-        except Exception as e:
-            traceback.print_exc()
-            print("Failed to buy: retrying...")
-            continue
 
+async def buy_leg(amm, size=1):
+    buy_tx_result = await amm.buy(size)
     print("Bought", size)
-    time.sleep(10)
+    return buy_tx_result
 
-    # Get balances and sell
-    coin_balances = await amm.get_balance()
-    sell_size = coin_balances["coin"]
-    time.sleep(6)
+
+async def sell_leg(amm, size=1):
     tries = 0
-
     while True:
         try:
-            await amm.sell(sell_size)
-            break
+            coin_balances = await amm.get_balance()
+            sell_size = coin_balances["coin"]
+            sell_tx_result = await amm.sell(sell_size)
+            print("Sold", size)
+            return sell_tx_result
         except Exception as e:
             time.sleep(0.4)
             tries += 1
             print(f"Failed to sell, attempt {tries}")
             continue
 
-    print("Sold", sell_size)
-    time.sleep(5)
 
-    # Calculate and display profit
-    coin_balances = await amm.get_balance()
-    sol_after = coin_balances["sol"]
-    print({"before": sol_before}, {"after": sol_after})
-    print({"profit": sol_after - sol_before})
-    print("Return:", sol_after / sol_before - 1)
+async def trade(
+    amm,
+    size,
+    trade_open_time,  # unix timestamp
+    trade_length,  # seconds
+):
+    sol_now = await amm.get_balance()
+    sol_now = sol_now["sol"]
+    if trade_open_time == -100:
+        # go now
+        trade_length = 20
+        b_tx = await buy_leg(amm, size)
+        # Get balances and sell
+        time.sleep(trade_length)
+        s_tx = await sell_leg(amm, size)
+        time.sleep(5)
+    else:
+        # check if the current time is >= trade_open_time
+        while time.time() < trade_open_time:
+            time.sleep(0.1)
+        # go now
+        trade_length = 20
+        b_tx = await buy_leg(amm, size)
+        # Get balances and sell
+        time.sleep(trade_length)
+        s_tx = await sell_leg(amm, size)
+        time.sleep(5)
+    sol_after = await amm.get_balance()
+    sol_after = sol_after["sol"]
+    trade_results = TradeResults(amm.pool_id)
+    trade_results.b_tx = b_tx
+    trade_results.s_tx = s_tx
+    trade_results.sol_before = sol_now
+    trade_results.sol_after = sol_after
+    print(
+        "Trade results:\n",
+        "Profit",
+        trade_results.sol_after - trade_results.sol_before,
+        "\n",
+    )
+
+
+def trading_operation(pool_id, size, trade_open_time, trade_length):
+    """The trading operation function for a given pool ID."""
+    # Since we are using threads, we need to create a new event loop for each
+    # thread to run in.
+    this_amm = make_amm(pool_id)
+    asyncio.new_event_loop().run_until_complete(
+        trade(
+            this_amm,
+            size,
+            trade_open_time,
+            trade_length,
+        )
+    )
+
+
+def execute_job(pool_id, size, trade_open_time, trade_length):
+    """Wrapper function to execute a job."""
+    try:
+        trading_operation(pool_id, size, trade_open_time, trade_length)
+    except Exception as e:
+        print(f"Error executing job for pool {pool_id}: {e}")
+
+
+def main():
+    with ThreadPoolExecutor(max_workers=5) as executor:  # Adjust max_workers as needed
+        while True:
+            pool_id = input("INPUT: ")
+            if pool_id.lower() == "quit":
+                break
+
+            if "size:" in pool_id:
+                size = float(pool_id.split(":")[1])
+            else:
+                size = 1
+
+            if "time:" in pool_id:
+                trade_open_time = float(pool_id.split(":")[1])
+            else:
+                trade_open_time = -100
+
+            if "length:" in pool_id:
+                trade_length = float(pool_id.split(":")[1])
+            else:
+                trade_length = 20
+
+            # Submit a new job to the executor
+            executor.submit(execute_job, pool_id, size, trade_open_time, trade_length)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

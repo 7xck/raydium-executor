@@ -196,17 +196,34 @@ class Liquidity:
         return TransactionInstruction(keys, AMM_PROGRAM_ID, data)
 
     async def buy(self, amount, decimals="quote_decimals"):
-        swap_tx = Transaction()
-        signers = [self.owner]
-        token_account_in = self.quote_token_account
-        token_account_out = self.base_token_account
-        amount_in = amount * 10 ** self.pool_keys[decimals]
-        swap_tx.add(
-            self.make_swap_instruction(
-                amount_in, token_account_in, token_account_out, self.pool_keys
+        try:
+            swap_tx = Transaction()
+            signers = [self.owner]
+            token_account_in = self.quote_token_account
+            token_account_out = self.base_token_account
+            amount_in = amount * 10 ** self.pool_keys[decimals]
+            swap_tx.add(
+                self.make_swap_instruction(
+                    amount_in, token_account_in, token_account_out, self.pool_keys
+                )
             )
-        )
-        return await self.conn.send_transaction(swap_tx, *signers)
+            return await self.conn.send_transaction(swap_tx, *signers)
+        except:
+            swap_tx = Transaction()
+            signers = [self.owner]
+            token_account_in = self.quote_token_account
+            token_account_out = self.base_token_account
+            amount_in = amount * 10 ** self.pool_keys[decimals]
+            swap_tx.add(
+                self.make_swap_instruction(
+                    amount_in,
+                    token_account_in,
+                    token_account_out,
+                    self.pool_keys,
+                    ALTERNATE_SERUM_ID,
+                )
+            )
+            return await self.conn.send_transaction(swap_tx, *signers)
 
     async def sell(self, amount, decimals="base_decimals"):
         try:
