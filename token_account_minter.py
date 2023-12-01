@@ -2,7 +2,7 @@ import requests
 import pangres
 from sqlalchemy import create_engine
 import pandas as pd
-from create_token_address import create_account
+from utils.create_token_address import create_account
 import time
 import json
 
@@ -54,12 +54,13 @@ while True:
         print("UNSEEN POOL!!!")
         print(unseen_pools)
         unseen_pools = unseen_pools.set_index("id")
+        unseen_pools["time_scraped"] = pd.Timestamp.utcnow()
         unseen_pools.to_sql("all_pools", db_connection, if_exists="append")
 
     for idx, row in unseen_pools.iterrows():
         create_account(
             config["private_key"],
-            config["wallet_address"],
+            config["wallet_add"],
             row["programId"],
             row["baseMint"],
         )

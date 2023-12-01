@@ -5,7 +5,7 @@ import time
 import traceback
 from typing import Any
 
-from raydium_amm import Liquidity
+from exchanges.raydium_amm import Liquidity
 
 # Configuration file for setup
 CONFIG_FILE = "config.json"
