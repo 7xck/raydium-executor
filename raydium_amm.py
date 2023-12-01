@@ -226,6 +226,9 @@ class Liquidity:
             )
             return await self.conn.send_transaction(swap_tx, *signers)
         except:
+            print(
+                "Failed to make swap instruction with serum program id, using alternate"
+            )
             swap_tx = Transaction()
             signers = [self.owner]
             token_account_in = self.base_token_account

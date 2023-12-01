@@ -46,7 +46,6 @@ def get_token_account(endpoint: str, owner: PublicKey, mint: PublicKey):
     account_data = Client(endpoint).get_token_accounts_by_owner(
         owner, TokenAccountOpts(mint)
     )
-    print(account_data)
     return PublicKey(account_data["result"]["value"][0]["pubkey"])
 
 
