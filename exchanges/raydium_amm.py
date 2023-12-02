@@ -2,31 +2,29 @@ import asyncio
 import re
 from ast import literal_eval
 
-import base58
-from solana.keypair import Keypair
-from solana.publickey import PublicKey
+from solders.keypair import Keypair
+from solders.pubkey import Pubkey as PublicKey
 from solana.rpc.async_api import AsyncClient
 from solana.rpc.commitment import Commitment
-from solana.transaction import TransactionInstruction, AccountMeta, Transaction
-import traceback
+from solana.transaction import AccountMeta, Transaction
+from solana.transaction import Instruction as TransactionInstruction
+from utils.create_token_address import create_account
 
 from utils.layouts import SWAP_LAYOUT, POOL_INFO_LAYOUT
 from utils.utils import fetch_pool_keys, get_token_account
 
-# from create_token_address import create_account
-import subprocess
-import shlex
-
 SERUM_VERSION = 3
 AMM_PROGRAM_VERSION = 4
 
-AMM_PROGRAM_ID = PublicKey("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8")
-TOKEN_PROGRAM_ID = PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
-SERUM_PROGRAM_ID = PublicKey(
+AMM_PROGRAM_ID = PublicKey.from_string("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8")
+TOKEN_PROGRAM_ID = PublicKey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
+SERUM_PROGRAM_ID = PublicKey.from_string(
     # "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
     "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"
 )  # PublicKey("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin")
-ALTERNATE_SERUM_ID = PublicKey("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin")
+ALTERNATE_SERUM_ID = PublicKey.from_string(
+    "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
+)
 
 LIQUIDITY_FEES_NUMERATOR = 25
 LIQUIDITY_FEES_DENOMINATOR = 10000
@@ -72,64 +70,32 @@ class Liquidity:
         self.conn = AsyncClient(self.endpoint, commitment=Commitment("confirmed"))
         self.pool_id = pool_id
         self.pool_keys = fetch_pool_keys(self.pool_id)
-        self.owner = Keypair.from_secret_key(base58.b58decode(secret_key))
+        self.owner = Keypair.from_base58_string(secret_key)
         self.wallet_address = wallet_address
         self.base_symbol, self.quote_symbol = symbol.split("/")
 
         try:
             self.base_token_account = get_token_account(
-                self.endpoint, self.owner.public_key, self.pool_keys["base_mint"]
+                self.endpoint, self.owner.pubkey(), self.pool_keys["base_mint"]
             )
         except:
-            while True:
-                try:
-                    # create token account first
-                    command = f"""/bin/bash -c 'source /home/ubuntu/raydium-executor/env_wallet/bin/activate && python create_token_address.py {secret_key} {wallet_address} {self.pool_keys["program_id"]} {self.pool_keys["str_base_mint"]}'"""
-                    # Use shlex to split the command correctly
-                    args = shlex.split(command)
-                    args
-                    # Run the subprocess
-                    result = subprocess.run(
-                        args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-                    )
-                    self.base_token_account = get_token_account(
-                        self.endpoint,
-                        self.owner.public_key,
-                        self.pool_keys["base_mint"],
-                    )
-                    break
-                except:
-                    print("Failed to create token base mint account, trying again")
-                    traceback.print_exc()
-                    continue
+            self.base_token_account = create_account(
+                secret_key,
+                wallet_address,
+                self.pool_keys["program_id"],
+                self.pool_keys["str_base_mint"],
+            )
         try:
             self.quote_token_account = get_token_account(
-                self.endpoint, self.owner.public_key, self.pool_keys["quote_mint"]
+                self.endpoint, self.owner.pubkey(), self.pool_keys["quote_mint"]
             )
         except:
-            while True:
-                try:
-                    # create token account first
-                    command = f"""/bin/bash -c 'source /home/ubuntu/raydium-executor/env_wallet/bin/activate && python create_token_address.py {secret_key} {wallet_address} {self.pool_keys["program_id"]} {self.pool_keys["str_quote_mint"]}'"""
-                    # Use shlex to split the command correctly
-                    args = shlex.split(command)
-                    args
-                    # Run the subprocess
-                    result = subprocess.run(
-                        args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-                    )
-                    self.quote_token_account = get_token_account(
-                        self.endpoint,
-                        self.owner.public_key,
-                        self.pool_keys["quote_mint"],
-                    )
-                    break
-                except KeyboardInterrupt:
-                    break
-                except:
-                    traceback.print_exc()
-                    print("Failed to create token quote mint account, trying again")
-                    continue
+            self.quote_token_account = create_account(
+                secret_key,
+                wallet_address,
+                self.pool_keys["program_id"],
+                self.pool_keys["str_quote_mint"],
+            )
 
     def open(self):
         self.conn = AsyncClient(self.endpoint, commitment=Commitment("confirmed"))
@@ -207,14 +173,14 @@ class Liquidity:
             ),
             AccountMeta(pubkey=token_account_in, is_signer=False, is_writable=True),
             AccountMeta(pubkey=token_account_out, is_signer=False, is_writable=True),
-            AccountMeta(
-                pubkey=self.owner.public_key, is_signer=True, is_writable=False
-            ),
+            AccountMeta(pubkey=self.owner.pubkey(), is_signer=True, is_writable=False),
         ]
         data = SWAP_LAYOUT.build(
             dict(instruction=9, amount_in=int(amount_in), min_amount_out=0)
         )
-        return TransactionInstruction(keys, AMM_PROGRAM_ID, data)
+        return TransactionInstruction(
+            accounts=keys, program_id=AMM_PROGRAM_ID, data=data
+        )
 
     async def buy(self, amount, decimals="quote_decimals"):
         try:
@@ -288,7 +254,7 @@ class Liquidity:
             "blockhash"
         ]
         tx = Transaction(
-            recent_blockhash=recent_block_hash, fee_payer=self.owner.public_key
+            recent_blockhash=recent_block_hash, fee_payer=self.owner.pubkey()
         )
         tx.add(self.make_simulate_pool_info_instruction(self.pool_keys))
         signers = [self.owner]
@@ -304,12 +270,14 @@ class Liquidity:
         )
 
     async def get_balance(self):
-        base_token_balance = (
-            await self.conn.get_token_account_balance(self.base_token_account)
-        )["result"]["value"]["uiAmount"]
-        quote_token_balance = (
-            await self.conn.get_token_account_balance(self.quote_token_account)
-        )["result"]["value"]["uiAmount"]
+        base_token_balance = await self.conn.get_token_account_balance(
+            self.base_token_account
+        )
+        base_token_balance = base_token_balance.value.ui_amount
+        quote_token_balance = await self.conn.get_token_account_balance(
+            self.quote_token_account
+        )
+        quote_token_balance = quote_token_balance.value.ui_amount
         return {
             self.base_symbol: base_token_balance,
             self.quote_symbol: quote_token_balance,

@@ -12,7 +12,7 @@ CONFIG_FILE = "config.json"
 config = load_config(CONFIG_FILE)
 
 # Default Pool ID if not provided as command line argument
-DEFAULT_POOL_ID = "AVs9TA4nWDzfPJE9gGVNJMVhcQy3V9PGazuz33BfG2RA"
+DEFAULT_POOL_ID = "73D9amguiZY8ah79xuZxDmfBpqGi4TYW7SgJsJBNW5EZ"
 
 
 def get_pool_id() -> str:
@@ -115,10 +115,13 @@ def execute_job(pool_id, size, trade_open_time, trade_length):
 
 
 def main():
-    pool_id = sys.argv[1]
+    if len(sys.argv) < 2:
+        pool_id = DEFAULT_POOL_ID
+    else:
+        pool_id = sys.argv[1]
 
     # Default values
-    size = 1
+    size = 0.5
     trade_open_time = -100
     trade_length = 35
 

@@ -60,6 +60,7 @@ class Solana_Simplified:
                 .value[0]
                 .pubkey
             )
+            print("Got the token account for the coin")
         except:
             token_wallet_address_public_key = (
                 spl_client.create_associated_token_account(
@@ -68,6 +69,7 @@ class Solana_Simplified:
                     recent_blockhash=None,
                 )
             )
+            print("Created a token account for the coin")
         return token_wallet_address_public_key
 
 
@@ -95,19 +97,4 @@ def create_account(private_key, wallet_address, program_id, mint):
         )
     )
 
-
-import sys
-
-if __name__ == "__main__":
-    test = True
-    if len(sys.argv) < 5:
-        print(
-            "Usage: python3 create_token_address.py <secret_key> <wallet_address> <program_id> <str_base_mint>"
-        )
-    else:
-        secret_key = sys.argv[1]
-        wallet_address = sys.argv[2]
-        program_id = sys.argv[3]
-        str_base_mint = sys.argv[4]
-
-    create_account(secret_key, wallet_address, program_id, str_base_mint)
+    return sender_token_pubkey
