@@ -60,17 +60,22 @@ async def sell_leg(amm, size=1):
 async def trade(
     amm,
     size,
-    trade_open_time,  # unix timestamp
     trade_length,  # seconds
 ):
+    print("Putting a trade on...")
     sol_now = await amm.get_balance()
     sol_now = sol_now["sol"]
+    print("Got SOL balance")
     # go now
-    print("got bal, starting buy")
+    print("Buying...")
     b_tx = await buy_leg(amm, size)
     # Get balances and sell
+    print("Sleeping until trade length expires...")
     time.sleep(trade_length)
+    print("Time to exit...")
     s_tx = await sell_leg(amm, size)
+    print("Sold position")
+    print("Waiting for balance to update...")
     time.sleep(5)
     sol_after = await amm.get_balance()
     sol_after = sol_after["sol"]
@@ -84,6 +89,8 @@ async def trade(
         "Profit",
         trade_results.sol_after - trade_results.sol_before,
         "\n",
+        "% Ret",
+        trade_results.sol_after / trade_results.sol_before,
     )
 
 
@@ -94,12 +101,11 @@ def trading_operation(pool_id, size, trade_open_time, trade_length):
     while time.time() < trade_open_time:
         time.sleep(0.1)
     this_amm = make_amm(pool_id)
-    print("made amm", this_amm.pool_id)
+    print("made AMM", this_amm.pool_id)
     asyncio.new_event_loop().run_until_complete(
         trade(
             this_amm,
             size,
-            trade_open_time,
             trade_length,
         )
     )
@@ -133,6 +139,8 @@ def main():
             trade_open_time = float(arg.split(":")[1])
         elif arg.startswith("length:"):
             trade_length = float(arg.split(":")[1])
+
+    print("Set values of: size", size, "time", trade_open_time, "length", trade_length)
 
     # Submit a new job to the executor
     execute_job(pool_id, size, trade_open_time, trade_length)

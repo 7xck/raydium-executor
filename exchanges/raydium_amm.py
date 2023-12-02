@@ -74,6 +74,8 @@ class Liquidity:
         self.wallet_address = wallet_address
         self.base_symbol, self.quote_symbol = symbol.split("/")
 
+        print("Finished initializing liquidity pool")
+        print("Trying to set token accounts...")
         try:
             self.base_token_account = get_token_account(
                 self.endpoint, self.owner.pubkey(), self.pool_keys["base_mint"]
@@ -85,6 +87,7 @@ class Liquidity:
                 self.pool_keys["program_id"],
                 self.pool_keys["str_base_mint"],
             )
+        print("Got base token account", self.pool_keys["str_base_mint"])
         try:
             self.quote_token_account = get_token_account(
                 self.endpoint, self.owner.pubkey(), self.pool_keys["quote_mint"]
@@ -96,12 +99,15 @@ class Liquidity:
                 self.pool_keys["program_id"],
                 self.pool_keys["str_quote_mint"],
             )
+        print("Got quote token account", self.pool_keys["str_quote_mint"])
 
     def open(self):
         self.conn = AsyncClient(self.endpoint, commitment=Commitment("confirmed"))
+        print("Made ASYNC client connection")
 
     async def close(self):
         await self.conn.close()
+        print("Closed ASYNC client connection")
 
     @staticmethod
     def make_simulate_pool_info_instruction(accounts):
@@ -135,6 +141,7 @@ class Liquidity:
         accounts: dict,
         serum_program_id=SERUM_PROGRAM_ID,
     ) -> TransactionInstruction:
+        print("Making a swap instruction...")
         keys = [
             AccountMeta(pubkey=TOKEN_PROGRAM_ID, is_signer=False, is_writable=False),
             AccountMeta(pubkey=accounts["amm_id"], is_signer=False, is_writable=True),
@@ -175,6 +182,7 @@ class Liquidity:
             AccountMeta(pubkey=token_account_out, is_signer=False, is_writable=True),
             AccountMeta(pubkey=self.owner.pubkey(), is_signer=True, is_writable=False),
         ]
+        print("Finished making, building SWAP LAYOUT...")
         data = SWAP_LAYOUT.build(
             dict(instruction=9, amount_in=int(amount_in), min_amount_out=0)
         )
@@ -194,8 +202,10 @@ class Liquidity:
                     amount_in, token_account_in, token_account_out, self.pool_keys
                 )
             )
+            print("Built swap tx instructions, ")
             return await self.conn.send_transaction(swap_tx, *signers)
         except:
+            print("Failed to build, trying to use alternate swap instructions")
             swap_tx = Transaction()
             signers = [self.owner]
             token_account_in = self.quote_token_account
@@ -214,6 +224,7 @@ class Liquidity:
 
     async def sell(self, amount, decimals="base_decimals"):
         try:
+            print("Building sell tx...")
             swap_tx = Transaction()
             signers = [self.owner]
             token_account_in = self.base_token_account
@@ -228,6 +239,7 @@ class Liquidity:
                     SERUM_PROGRAM_ID,
                 )
             )
+            print("built, sending now...")
             return await self.conn.send_transaction(swap_tx, *signers)
         except:
             print(
