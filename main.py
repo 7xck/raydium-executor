@@ -1,11 +1,17 @@
+import pandas as pd
+
+# start time
+START_TIME = pd.Timestamp.now()
 import asyncio
-import sys
 import time
-from models.trade_results import TradeResults
-from utils.utils import load_config
+import sys
 import traceback
+from sqlalchemy import create_engine
 
 from exchanges.raydium_amm import Liquidity
+from models.trade_results import TradeResults
+from utils.utils import load_config
+from solana.rpc.core import RPCException
 
 # Configuration file for setup
 CONFIG_FILE = "config.json"
@@ -13,6 +19,7 @@ config = load_config(CONFIG_FILE)
 
 # Default Pool ID if not provided as command line argument
 DEFAULT_POOL_ID = "73D9amguiZY8ah79xuZxDmfBpqGi4TYW7SgJsJBNW5EZ"
+ENGINE = create_engine(config["db"])
 
 
 def get_pool_id() -> str:
@@ -36,9 +43,16 @@ def make_amm(pool_id, symbol="coin/sol"):
 
 
 async def buy_leg(amm, size=1):
-    buy_tx_result = await amm.buy(size)
-    print("Bought", size)
-    return buy_tx_result
+    try:
+        buy_tx_result = await amm.buy(size)
+        print("Bought", size)
+        return buy_tx_result
+    except RPCException as e:
+        print("reduce size")
+        size = size / 2
+        buy_tx_result = await amm.buy(size)
+        print("Bought", size)
+        return buy_tx_result
 
 
 async def sell_leg(amm, size=1):
@@ -62,6 +76,7 @@ async def trade(
     size,
     trade_length,  # seconds
 ):
+    trade_results = TradeResults(amm.pool_id)
     print("Putting a trade on...")
     sol_now = await amm.get_balance()
     sol_now = sol_now["sol"]
@@ -69,19 +84,22 @@ async def trade(
     # go now
     print("Buying...")
     b_tx = await buy_leg(amm, size)
+    # get buy time
+    trade_results.buy_time = pd.Timestamp.now()
     # Get balances and sell
     print("Sleeping until trade length expires...")
     time.sleep(trade_length)
     print("Time to exit...")
     s_tx = await sell_leg(amm, size)
+    # add sell time
+    trade_results.sell_time = pd.Timestamp.now()
     print("Sold position")
     print("Waiting for balance to update...")
-    time.sleep(5)
+    time.sleep(10)
     sol_after = await amm.get_balance()
     sol_after = sol_after["sol"]
-    trade_results = TradeResults(amm.pool_id)
-    trade_results.b_tx = b_tx
-    trade_results.s_tx = s_tx
+    trade_results.b_tx = b_tx.to_json()
+    trade_results.s_tx = s_tx.to_json()
     trade_results.sol_before = sol_now
     trade_results.sol_after = sol_after
     print(
@@ -90,8 +108,16 @@ async def trade(
         trade_results.sol_after - trade_results.sol_before,
         "\n",
         "% Ret",
-        trade_results.sol_after / trade_results.sol_before,
+        trade_results.sol_after / trade_results.sol_before - 1,
+        "\n",
+        "Time it took from start to buy",
+        trade_results.buy_time - START_TIME,
+        "\n",
+        "Time it took from start to sell",
+        trade_results.sell_time - START_TIME,
+        "\n",
     )
+    trade_results.save(ENGINE)
 
 
 def trading_operation(pool_id, size, trade_open_time, trade_length):
@@ -127,7 +153,7 @@ def main():
         pool_id = sys.argv[1]
 
     # Default values
-    size = 0.5
+    size = 1
     trade_open_time = -100
     trade_length = 35
 

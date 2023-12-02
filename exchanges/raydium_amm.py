@@ -76,6 +76,7 @@ class Liquidity:
 
         print("Finished initializing liquidity pool")
         print("Trying to set token accounts...")
+        print("Getting base token account", self.pool_keys["str_base_mint"])
         try:
             self.base_token_account = get_token_account(
                 self.endpoint, self.owner.pubkey(), self.pool_keys["base_mint"]
@@ -88,6 +89,7 @@ class Liquidity:
                 self.pool_keys["str_base_mint"],
             )
         print("Got base token account", self.pool_keys["str_base_mint"])
+        print("Getting quote token account", self.pool_keys["str_quote_mint"])
         try:
             self.quote_token_account = get_token_account(
                 self.endpoint, self.owner.pubkey(), self.pool_keys["quote_mint"]
@@ -197,6 +199,7 @@ class Liquidity:
             token_account_in = self.quote_token_account
             token_account_out = self.base_token_account
             amount_in = amount * 10 ** self.pool_keys[decimals]
+            print("About to add swap BUY instruction to tx...")
             swap_tx.add(
                 self.make_swap_instruction(
                     amount_in, token_account_in, token_account_out, self.pool_keys
@@ -205,7 +208,7 @@ class Liquidity:
             print("Built swap tx instructions, ")
             return await self.conn.send_transaction(swap_tx, *signers)
         except:
-            print("Failed to build, trying to use alternate swap instructions")
+            print("LAST RESORT: Failed to build, trying to use alternate serum id")
             swap_tx = Transaction()
             signers = [self.owner]
             token_account_in = self.quote_token_account
@@ -230,6 +233,7 @@ class Liquidity:
             token_account_in = self.base_token_account
             token_account_out = self.quote_token_account
             amount_in = amount * 10 ** self.pool_keys[decimals]
+            print("About to add swap SELL instruction to tx...")
             swap_tx.add(
                 self.make_swap_instruction(
                     amount_in,
