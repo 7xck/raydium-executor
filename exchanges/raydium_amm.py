@@ -8,6 +8,7 @@ from solana.publickey import PublicKey
 from solana.rpc.async_api import AsyncClient
 from solana.rpc.commitment import Commitment
 from solana.transaction import TransactionInstruction, AccountMeta, Transaction
+import traceback
 
 from utils.layouts import SWAP_LAYOUT, POOL_INFO_LAYOUT
 from utils.utils import fetch_pool_keys, get_token_account
@@ -80,35 +81,55 @@ class Liquidity:
                 self.endpoint, self.owner.public_key, self.pool_keys["base_mint"]
             )
         except:
-            # create token account first
-            command = f"""/bin/bash -c 'source /home/ubuntu/raydium-executor/env_wallet/bin/activate && python create_token_address.py {secret_key} {wallet_address} {self.pool_keys["program_id"]} {self.pool_keys["str_base_mint"]}'"""
-            # Use shlex to split the command correctly
-            args = shlex.split(command)
-            args
-            # Run the subprocess
-            result = subprocess.run(
-                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-            )
-            self.base_token_account = get_token_account(
-                self.endpoint, self.owner.public_key, self.pool_keys["base_mint"]
-            )
+            while True:
+                try:
+                    # create token account first
+                    command = f"""/bin/bash -c 'source /home/ubuntu/raydium-executor/env_wallet/bin/activate && python create_token_address.py {secret_key} {wallet_address} {self.pool_keys["program_id"]} {self.pool_keys["str_base_mint"]}'"""
+                    # Use shlex to split the command correctly
+                    args = shlex.split(command)
+                    args
+                    # Run the subprocess
+                    result = subprocess.run(
+                        args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+                    )
+                    self.base_token_account = get_token_account(
+                        self.endpoint,
+                        self.owner.public_key,
+                        self.pool_keys["base_mint"],
+                    )
+                    break
+                except:
+                    print("Failed to create token base mint account, trying again")
+                    traceback.print_exc()
+                    continue
         try:
             self.quote_token_account = get_token_account(
                 self.endpoint, self.owner.public_key, self.pool_keys["quote_mint"]
             )
         except:
-            # create token account first
-            command = f"""/bin/bash -c 'source /home/ubuntu/raydium-executor/env_wallet/bin/activate && python create_token_address.py {secret_key} {wallet_address} {self.pool_keys["program_id"]} {self.pool_keys["str_quote_mint"]}'"""
-            # Use shlex to split the command correctly
-            args = shlex.split(command)
-            args
-            # Run the subprocess
-            result = subprocess.run(
-                args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-            )
-            self.quote_token_account = get_token_account(
-                self.endpoint, self.owner.public_key, self.pool_keys["quote_mint"]
-            )
+            while True:
+                try:
+                    # create token account first
+                    command = f"""/bin/bash -c 'source /home/ubuntu/raydium-executor/env_wallet/bin/activate && python create_token_address.py {secret_key} {wallet_address} {self.pool_keys["program_id"]} {self.pool_keys["str_quote_mint"]}'"""
+                    # Use shlex to split the command correctly
+                    args = shlex.split(command)
+                    args
+                    # Run the subprocess
+                    result = subprocess.run(
+                        args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+                    )
+                    self.quote_token_account = get_token_account(
+                        self.endpoint,
+                        self.owner.public_key,
+                        self.pool_keys["quote_mint"],
+                    )
+                    break
+                except KeyboardInterrupt:
+                    break
+                except:
+                    traceback.print_exc()
+                    print("Failed to create token quote mint account, trying again")
+                    continue
 
     def open(self):
         self.conn = AsyncClient(self.endpoint, commitment=Commitment("confirmed"))

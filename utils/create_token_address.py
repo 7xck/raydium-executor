@@ -28,7 +28,9 @@ class Solana_Simplified:
         return token_address_publickey
 
     def set_solana_client(
-        development_url: Optional[str] = "https://api.mainnet-beta.solana.com",
+        development_url: Optional[
+            str
+        ] = "https://solana-mainnet.core.chainstack.com/00147e525c8e83a2f2c57f823fc40d96",
     ):
         solana_client = Client(development_url)
         return solana_client
@@ -69,7 +71,6 @@ class Solana_Simplified:
         return token_wallet_address_public_key
 
 
-
 def create_account(private_key, wallet_address, program_id, mint):
     main_wallet = wallet_address
     # program_id = "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"  # eg: https://solscan.io/token/FpekncBMe3Vsi1LMkh6zbNq8pdM6xEbNiFsJBRcPbMDQ | FpekncBMe3Vsi1LMkh6zbNq8pdM6xEbNiFsJBRcPbMDQ
@@ -98,10 +99,15 @@ def create_account(private_key, wallet_address, program_id, mint):
 import sys
 
 if __name__ == "__main__":
-    secret_key = sys.argv[1]
-    wallet_address = sys.argv[2]
-    program_id = sys.argv[3]
-    str_base_mint = sys.argv[4]
+    test = True
+    if len(sys.argv) < 5:
+        print(
+            "Usage: python3 create_token_address.py <secret_key> <wallet_address> <program_id> <str_base_mint>"
+        )
+    else:
+        secret_key = sys.argv[1]
+        wallet_address = sys.argv[2]
+        program_id = sys.argv[3]
+        str_base_mint = sys.argv[4]
 
-    # Call your function with the provided arguments
     create_account(secret_key, wallet_address, program_id, str_base_mint)

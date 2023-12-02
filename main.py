@@ -3,6 +3,7 @@ import sys
 import time
 from models.trade_results import TradeResults
 from utils.utils import load_config
+import traceback
 
 from exchanges.raydium_amm import Liquidity
 
@@ -64,25 +65,13 @@ async def trade(
 ):
     sol_now = await amm.get_balance()
     sol_now = sol_now["sol"]
-    if trade_open_time == -100:
-        # go now
-        trade_length = 20
-        b_tx = await buy_leg(amm, size)
-        # Get balances and sell
-        time.sleep(trade_length)
-        s_tx = await sell_leg(amm, size)
-        time.sleep(5)
-    else:
-        # check if the current time is >= trade_open_time
-        while time.time() < trade_open_time:
-            time.sleep(0.1)
-        # go now
-        trade_length = 20
-        b_tx = await buy_leg(amm, size)
-        # Get balances and sell
-        time.sleep(trade_length)
-        s_tx = await sell_leg(amm, size)
-        time.sleep(5)
+    # go now
+    print("got bal, starting buy")
+    b_tx = await buy_leg(amm, size)
+    # Get balances and sell
+    time.sleep(trade_length)
+    s_tx = await sell_leg(amm, size)
+    time.sleep(5)
     sol_after = await amm.get_balance()
     sol_after = sol_after["sol"]
     trade_results = TradeResults(amm.pool_id)
@@ -102,7 +91,10 @@ def trading_operation(pool_id, size, trade_open_time, trade_length):
     """The trading operation function for a given pool ID."""
     # Since we are using threads, we need to create a new event loop for each
     # thread to run in.
+    while time.time() < trade_open_time:
+        time.sleep(0.1)
     this_amm = make_amm(pool_id)
+    print("made amm", this_amm.pool_id)
     asyncio.new_event_loop().run_until_complete(
         trade(
             this_amm,
@@ -118,6 +110,7 @@ def execute_job(pool_id, size, trade_open_time, trade_length):
     try:
         trading_operation(pool_id, size, trade_open_time, trade_length)
     except Exception as e:
+        traceback.print_exc()
         print(f"Error executing job for pool {pool_id}: {e}")
 
 
@@ -127,7 +120,7 @@ def main():
     # Default values
     size = 1
     trade_open_time = -100
-    trade_length = 20
+    trade_length = 35
 
     # Process each argument for optional parameters
     for arg in sys.argv[2:]:

@@ -5,6 +5,7 @@ from solana.rpc.api import Client
 from solana.rpc.types import TokenAccountOpts
 import json
 import time
+import traceback
 
 
 def load_config(file_path: str):
@@ -22,15 +23,16 @@ def extract_pool_info(pools_list: list, pool_id: str) -> dict:
 
 def fetch_pool_keys(pool_id: str):
     while True:
-        time.sleep(10)
         all_pools = requests.get(
-            "https://api.raydium.io/v2/sdk/liquidity/mainnet.json"
+            "https://api.raydium.io/v2/sdk/liquidity/mainnet.json",
         ).json()
         pools = all_pools["official"] + all_pools["unOfficial"]
         try:
             amm_info = extract_pool_info(pools, pool_id)
             break
-        except:
+        except Exception:
+            traceback.print_exc()
+            time.sleep(10)
             continue
 
     return {
