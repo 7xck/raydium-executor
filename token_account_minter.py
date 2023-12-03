@@ -65,5 +65,4 @@ while True:
             row["baseMint"],
         )
         print("created account")
-        time.sleep(20)
     time.sleep(120)
