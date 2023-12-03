@@ -9,8 +9,9 @@ from solana.rpc.async_api import AsyncClient
 from solana.rpc.commitment import Commitment
 from solana.transaction import AccountMeta, Transaction
 from solana.transaction import Instruction as TransactionInstruction
-from utils.create_token_address import create_account
+from solana.rpc.types import TxOpts
 
+from utils.create_token_address import create_account
 from utils.layouts import SWAP_LAYOUT, POOL_INFO_LAYOUT
 from utils.utils import fetch_pool_keys, get_token_account
 
@@ -213,8 +214,9 @@ class Liquidity:
                     amount_in, token_account_in, token_account_out, self.pool_keys
                 )
             )
+            opts = TxOpts(skip_preflight=True, max_retries=3)
             print("Built swap tx instructions, ")
-            return await self.conn.send_transaction(swap_tx, *signers)
+            return await self.conn.send_transaction(swap_tx, *signers, opts=opts)
         except:
             print("LAST RESORT: Failed to build, trying to use alternate serum id")
             swap_tx = Transaction()
