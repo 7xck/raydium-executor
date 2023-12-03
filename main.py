@@ -101,16 +101,18 @@ async def trade(
     trade_results.sell_time = pd.Timestamp.now()
     print("Sold position")
     print("Waiting for balance to update...")
-    time.sleep(7)
+    time.sleep(8)
     sol_after = await amm.get_balance()
     sol_after = sol_after["sol"]
-    if sol_after < sol_now:
-        print("Lost money, exiting all")
+    if sol_after < (size / 2):
+        print(
+            "Lost money, exiting all", "sol after:", sol_after, "  sol before:", sol_now
+        )
         s_tx_two = await sell_leg(amm)
         trade_results.s_tx_two = s_tx_two.to_json()
     else:
         print("Making money, waiting then selling all")
-        time.sleep(5)
+        time.sleep(2)
         s_tx_two = await sell_leg(amm)
         trade_results.s_tx_two = s_tx_two.to_json()
     time.sleep(10)
