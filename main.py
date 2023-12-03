@@ -37,7 +37,9 @@ def make_amm(pool_id, symbol="coin/sol"):
         config["private_key"],
         symbol,
         config["wallet_add"],
+        START_TIME,
     )
+    print("time it took to make amm", pd.Timestamp.now() - START_TIME)
 
     return amm
 

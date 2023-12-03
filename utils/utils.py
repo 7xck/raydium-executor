@@ -6,6 +6,7 @@ from solana.rpc.types import TokenAccountOpts
 import json
 import time
 import traceback
+import pandas as pd
 
 
 def load_config(file_path: str):
@@ -15,17 +16,23 @@ def load_config(file_path: str):
 
 
 def extract_pool_info(pools_list: list, pool_id: str) -> dict:
+    print("starting to extract pool info")
+    start_time = pd.Timestamp.now()
     for pool in pools_list:
         if pool["id"] == pool_id:
+            end_time = pd.Timestamp.now()
+            print("time it took to extract pool info", end_time - start_time)
             return pool
     raise Exception(f"{pool_id} pool not found!")
 
 
 def fetch_pool_keys(pool_id: str):
     while True:
+        start_time = pd.Timestamp.now()
         all_pools = requests.get(
             "https://api.raydium.io/v2/sdk/liquidity/mainnet.json",
         ).json()
+        print("hit raydium api, time it took", pd.Timestamp.now() - start_time)
         pools = all_pools["official"] + all_pools["unOfficial"]
         try:
             amm_info = extract_pool_info(pools, pool_id)
@@ -64,6 +71,7 @@ def get_token_account(endpoint: str, owner: PublicKey, mint: PublicKey):
     account_data = Client(endpoint).get_token_accounts_by_owner(
         owner, TokenAccountOpts(mint)
     )
+    print("mint", account_data.value[0].pubkey)
     return account_data.value[0].pubkey
 
 

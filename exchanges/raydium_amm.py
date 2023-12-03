@@ -1,6 +1,7 @@
 import asyncio
 import re
 from ast import literal_eval
+import pandas as pd
 
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey as PublicKey
@@ -65,14 +66,19 @@ class Liquidity:
         secret_key: str,
         symbol: str,
         wallet_address: str,
+        start_time,
     ):
         self.endpoint = rpc_endpoint
         self.conn = AsyncClient(self.endpoint, commitment=Commitment("confirmed"))
         self.pool_id = pool_id
+        print("Started fetching pool keys", pd.Timestamp.now() - start_time)
         self.pool_keys = fetch_pool_keys(self.pool_id)
+        print("Finished fetching pool keys", pd.Timestamp.now() - start_time)
         self.owner = Keypair.from_base58_string(secret_key)
         self.wallet_address = wallet_address
         self.base_symbol, self.quote_symbol = symbol.split("/")
+        self.sol_mint = "So11111111111111111111111111111111111111112"
+        self.sol_pubkey = "4ec6WNxekXf9YoiBTXWnGhE5jfTSLTnsTU7EqPvEiBdA"
 
         print("Finished initializing liquidity pool")
         print("Trying to set token accounts...")
@@ -82,6 +88,7 @@ class Liquidity:
                 self.endpoint, self.owner.pubkey(), self.pool_keys["base_mint"]
             )
         except:
+            print("have to create a token account....")
             self.base_token_account = create_account(
                 secret_key,
                 wallet_address,
@@ -90,17 +97,21 @@ class Liquidity:
             )
         print("Got base token account", self.pool_keys["str_base_mint"])
         print("Getting quote token account", self.pool_keys["str_quote_mint"])
-        try:
-            self.quote_token_account = get_token_account(
-                self.endpoint, self.owner.pubkey(), self.pool_keys["quote_mint"]
-            )
-        except:
-            self.quote_token_account = create_account(
-                secret_key,
-                wallet_address,
-                self.pool_keys["program_id"],
-                self.pool_keys["str_quote_mint"],
-            )
+        if self.pool_keys["str_quote_mint"] == self.sol_mint:
+            self.quote_token_account = PublicKey.from_string(self.sol_pubkey)
+        else:
+            try:
+                self.quote_token_account = get_token_account(
+                    self.endpoint, self.owner.pubkey(), self.pool_keys["quote_mint"]
+                )
+            except:
+                print("have to create a token account...")
+                self.quote_token_account = create_account(
+                    secret_key,
+                    wallet_address,
+                    self.pool_keys["program_id"],
+                    self.pool_keys["str_quote_mint"],
+                )
         print("Got quote token account", self.pool_keys["str_quote_mint"])
 
     def open(self):
