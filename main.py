@@ -57,14 +57,18 @@ async def buy_leg(amm, size=1):
         return buy_tx_result
 
 
-async def sell_leg(amm, size=1):
+async def sell_leg(amm, half=False):
     tries = 0
     while True:
         try:
             coin_balances = await amm.get_balance()
-            sell_size = coin_balances["coin"]
+            if half:
+                # round to floor
+                sell_size = int(coin_balances["coin"] / 2)
+            else:
+                sell_size = coin_balances["coin"]
             sell_tx_result = await amm.sell(sell_size)
-            print("Sold", size)
+            print("Sold", sell_size)
             return sell_tx_result
         except Exception as e:
             time.sleep(0.4)
@@ -92,11 +96,18 @@ async def trade(
     print("Sleeping until trade length expires...")
     time.sleep(trade_length)
     print("Time to exit...")
-    s_tx = await sell_leg(amm, size)
+    s_tx = await sell_leg(amm, half=True)
     # add sell time
     trade_results.sell_time = pd.Timestamp.now()
     print("Sold position")
     print("Waiting for balance to update...")
+    time.sleep(7)
+    sol_after = await amm.get_balance()
+    sol_after = sol_after["sol"]
+    if sol_after < sol_now:
+        print("Lost money, exiting all")
+        s_tx_two = await sell_leg(amm)
+        trade_results.s_tx_two = s_tx_two.to_json()
     time.sleep(10)
     sol_after = await amm.get_balance()
     sol_after = sol_after["sol"]
@@ -155,7 +166,7 @@ def main():
         pool_id = sys.argv[1]
 
     # Default values
-    size = 1
+    size = 0.5
     trade_open_time = -100
     trade_length = 35
 

@@ -19,10 +19,7 @@ AMM_PROGRAM_VERSION = 4
 
 AMM_PROGRAM_ID = PublicKey.from_string("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8")
 TOKEN_PROGRAM_ID = PublicKey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
-SERUM_PROGRAM_ID = PublicKey.from_string(
-    # "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
-    "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"
-)  # PublicKey("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin")
+SERUM_PROGRAM_ID = PublicKey.from_string("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX")
 ALTERNATE_SERUM_ID = PublicKey.from_string(
     "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
 )
