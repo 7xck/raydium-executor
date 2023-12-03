@@ -108,6 +108,11 @@ async def trade(
         print("Lost money, exiting all")
         s_tx_two = await sell_leg(amm)
         trade_results.s_tx_two = s_tx_two.to_json()
+    else:
+        print("Making money, waiting then selling all")
+        time.sleep(5)
+        s_tx_two = await sell_leg(amm)
+        trade_results.s_tx_two = s_tx_two.to_json()
     time.sleep(10)
     sol_after = await amm.get_balance()
     sol_after = sol_after["sol"]
