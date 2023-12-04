@@ -119,9 +119,9 @@ class Liquidity:
         created_at = target_stats["pairCreatedAt"]  # unix time ms
         current_time = int(time.time() * 1000)
         age_in_minutes = (current_time - created_at) / (60 * 1000)
+        print("age in minutes:", age_in_minutes)
         if age_in_minutes <= 10:
             return True
-        
 
         if sum(target_stats["txns"]["h1"].values()) < 10:
             print("Not enough txns in 1h")
@@ -130,7 +130,7 @@ class Liquidity:
             print("not enough txns in 5m")
             return False
         if target_stats["volume"]["h1"] < 1000:
-            print("not enough $volume in m5")
+            print("not enough $volume in h1")
             return False
         return True
 
