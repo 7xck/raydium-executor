@@ -89,6 +89,7 @@ class Liquidity:
         self.base_symbol, self.quote_symbol = symbol.split("/")
         self.sol_mint = "So11111111111111111111111111111111111111112"
         self.sol_pubkey = "4ec6WNxekXf9YoiBTXWnGhE5jfTSLTnsTU7EqPvEiBdA"
+        self.open()
         print("Finished initializing liquidity pool")
         print("Trying to set token accounts...")
         self._get_accounts()
