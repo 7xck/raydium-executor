@@ -113,11 +113,15 @@ class Liquidity:
         target_stats = response.json()["pair"]
         # a couple checks to make sure we aren't gonna get fucked
         if sum(target_stats["txns"]["h1"].values()) < 20:
+            print("Not enough txns in 1h")
             return False
         if sum(target_stats["txns"]["m5"].values()) < 10:
+            print("not enough txns in 5m")
             return False
-        if target_stats["volume"]["m5"] < 500:
+        if target_stats["volume"]["1h"] < 1000:
+            print("not enough $volume in m5")
             return False
+        return True
 
     def open(self):
         self.conn = AsyncClient(self.endpoint, commitment=Commitment("confirmed"))
