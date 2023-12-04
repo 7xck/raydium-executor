@@ -118,7 +118,7 @@ class Liquidity:
         if sum(target_stats["txns"]["m5"].values()) < 10:
             print("not enough txns in 5m")
             return False
-        if target_stats["volume"]["1h"] < 1000:
+        if target_stats["volume"]["h1"] < 1000:
             print("not enough $volume in m5")
             return False
         return True
