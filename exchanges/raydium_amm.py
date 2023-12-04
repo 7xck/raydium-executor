@@ -15,6 +15,7 @@ import json
 import solana
 import numpy as np
 import threading
+import requests
 
 from utils.create_token_address import create_account
 from utils.layouts import SWAP_LAYOUT, POOL_INFO_LAYOUT
@@ -75,7 +76,9 @@ class Liquidity:
         self.endpoint = rpc_endpoint
         self.client = Client(self.endpoint, commitment=Commitment("confirmed"))
         self.pool_id = pool_id
-        self.is_active = self.get_trade_activity()
+        self.is_active = self.get_dexscreener_stats()  # self.get_trade_activity()
+        if not self.is_active:
+            raise Exception("POOL IS ILLIQUID AF, ABORTING")
         print("Started fetching pool keys", pd.Timestamp.now() - start_time)
         self.pool_keys = fetch_pool_keys(self.pool_id)
         self.base_mint_str = self.pool_keys["str_base_mint"]
@@ -102,6 +105,20 @@ class Liquidity:
         is_active = self.median_time_diff > pd.Timedelta(seconds=30)
         return is_active
 
+    def get_dexscreener_stats(self):
+        # use pool ID to hit api
+        response = requests.get(
+            url="https://api.dexscreener.com/latest/dex/pairs/solana/" + self.pool_id
+        )
+        target_stats = response.json()["pair"]
+        # a couple checks to make sure we aren't gonna get fucked
+        if sum(target_stats["txns"]["h1"].values()) < 20:
+            return False
+        if sum(target_stats["txns"]["m5"].values()) < 10:
+            return False
+        if target_stats["volume"]["m5"] < 500:
+            return False
+
     def open(self):
         self.conn = AsyncClient(self.endpoint, commitment=Commitment("confirmed"))
         print("Made ASYNC client connection")
@@ -115,7 +132,7 @@ class Liquidity:
         resultArr = []
         rounds = 0
         txCount = 0
-        maxTxCount = 100
+        maxTxCount = 30
 
         def getTxDetail(txSignature):
             txSignature2 = solana.transaction.Signature.from_string(txSignature)
