@@ -113,7 +113,7 @@ class Liquidity:
         )
         target_stats = response.json()["pair"]
         # a couple checks to make sure we aren't gonna get fucked
-        if sum(target_stats["txns"]["h1"].values()) < 20:
+        if sum(target_stats["txns"]["h1"].values()) < 10:
             print("Not enough txns in 1h")
             return False
         if sum(target_stats["txns"]["m5"].values()) < 10:
