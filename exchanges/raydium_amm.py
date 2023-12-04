@@ -76,6 +76,7 @@ class Liquidity:
         self.endpoint = rpc_endpoint
         self.client = Client(self.endpoint, commitment=Commitment("confirmed"))
         self.pool_id = pool_id
+        self.open()
         self.is_active = self.get_dexscreener_stats()  # self.get_trade_activity()
         if not self.is_active:
             raise Exception("POOL IS ILLIQUID AF, ABORTING")
@@ -89,7 +90,6 @@ class Liquidity:
         self.base_symbol, self.quote_symbol = symbol.split("/")
         self.sol_mint = "So11111111111111111111111111111111111111112"
         self.sol_pubkey = "4ec6WNxekXf9YoiBTXWnGhE5jfTSLTnsTU7EqPvEiBdA"
-        self.open()
         print("Finished initializing liquidity pool")
         print("Trying to set token accounts...")
         self._get_accounts()
