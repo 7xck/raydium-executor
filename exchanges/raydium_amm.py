@@ -16,6 +16,7 @@ import solana
 import numpy as np
 import threading
 import requests
+import time
 
 from utils.create_token_address import create_account
 from utils.layouts import SWAP_LAYOUT, POOL_INFO_LAYOUT
@@ -113,6 +114,15 @@ class Liquidity:
         )
         target_stats = response.json()["pair"]
         # a couple checks to make sure we aren't gonna get fucked
+        # grab the unix timestamp (which is in ms)
+        # and if pair is only 5-10 minutes old, go true
+        created_at = target_stats["pairCreatedAt"]  # unix time ms
+        current_time = int(time.time() * 1000)
+        age_in_minutes = (current_time - created_at) / (60 * 1000)
+        if age_in_minutes <= 10:
+            return True
+        
+
         if sum(target_stats["txns"]["h1"].values()) < 10:
             print("Not enough txns in 1h")
             return False
