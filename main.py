@@ -122,6 +122,7 @@ async def trade(
     trade_results.s_tx = s_tx.to_json()
     trade_results.sol_before = sol_now
     trade_results.sol_after = sol_after
+    trade_results.median_trade_time = str(amm.median_trade_time)
     print(
         "Trade results:\n",
         "Profit",

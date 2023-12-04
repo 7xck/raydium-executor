@@ -10,6 +10,11 @@ from solana.rpc.commitment import Commitment
 from solana.transaction import AccountMeta, Transaction
 from solana.transaction import Instruction as TransactionInstruction
 from solana.rpc.types import TxOpts
+from solana.rpc.api import Client
+import json
+import solana
+import numpy as np
+import threading
 
 from utils.create_token_address import create_account
 from utils.layouts import SWAP_LAYOUT, POOL_INFO_LAYOUT
@@ -24,6 +29,7 @@ SERUM_PROGRAM_ID = PublicKey.from_string("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyk
 ALTERNATE_SERUM_ID = PublicKey.from_string(
     "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
 )
+explorerULRTx = "https://explorer.solana.com/tx/"
 
 LIQUIDITY_FEES_NUMERATOR = 25
 LIQUIDITY_FEES_DENOMINATOR = 10000
@@ -67,20 +73,95 @@ class Liquidity:
         start_time,
     ):
         self.endpoint = rpc_endpoint
-        self.conn = AsyncClient(self.endpoint, commitment=Commitment("confirmed"))
+        self.client = Client(self.endpoint, commitment=Commitment("confirmed"))
         self.pool_id = pool_id
+        self.is_active = self.get_trade_activity()
         print("Started fetching pool keys", pd.Timestamp.now() - start_time)
         self.pool_keys = fetch_pool_keys(self.pool_id)
+        self.base_mint_str = self.pool_keys["str_base_mint"]
         print("Finished fetching pool keys", pd.Timestamp.now() - start_time)
         self.owner = Keypair.from_base58_string(secret_key)
+        self.secret_key = secret_key
         self.wallet_address = wallet_address
         self.base_symbol, self.quote_symbol = symbol.split("/")
         self.sol_mint = "So11111111111111111111111111111111111111112"
         self.sol_pubkey = "4ec6WNxekXf9YoiBTXWnGhE5jfTSLTnsTU7EqPvEiBdA"
-
         print("Finished initializing liquidity pool")
         print("Trying to set token accounts...")
-        print("Getting base token account", self.pool_keys["str_base_mint"])
+        self._get_accounts()
+
+    def get_trade_activity(self):
+        self._check_trade_validity()
+        self.df_processedTx = pd.DataFrame(self.processedTxArr)
+        self.df_processedTx = self.df_processedTx.sort_values(
+            "blockTime", ascending=True
+        )
+        # get median time between transactions
+        self.df_processedTx["time_diff"] = self.df_processedTx["blockTime"].diff()
+        self.median_time_diff = self.df_processedTx["time_diff"].median()
+        is_active = self.median_time_diff > pd.Timedelta(seconds=30)
+        return is_active
+
+    def open(self):
+        self.conn = AsyncClient(self.endpoint, commitment=Commitment("confirmed"))
+        print("Made ASYNC client connection")
+
+    async def close(self):
+        await self.conn.close()
+        print("Closed ASYNC client connection")
+
+    def _check_trade_validity(self):
+        lastSignature = None
+        resultArr = []
+        rounds = 0
+        txCount = 0
+        maxTxCount = 100
+
+        def getTxDetail(txSignature):
+            txSignature2 = solana.transaction.Signature.from_string(txSignature)
+            tx = self.client.get_transaction(
+                txSignature2, max_supported_transaction_version=0
+            )
+            tx = json.loads(tx.to_json())
+            postTokenBalances = tx["result"]["meta"]["postTokenBalances"]
+            preTokenBalances = tx["result"]["meta"]["preTokenBalances"]
+            if postTokenBalances != preTokenBalances:
+                print(explorerULRTx + txSignature)
+                resultArr.append(tx)
+
+        RaydiumPubKey = solana.rpc.types.Pubkey.from_string(self.str_base_mint)
+        while True:
+            print("round-" + str(rounds + 1))
+            print("getting transactions")
+            RaydiumPubKey = solana.rpc.types.Pubkey.from_string(self.base_mint_str)
+            txs = self.client.get_signatures_for_address(
+                RaydiumPubKey, limit=200, before=lastSignature
+            ).to_json()
+            txs = json.loads(txs)["result"]
+            print("processing signatures")
+            signatures = np.array([o["signature"] for o in txs])
+
+            threads = list()
+            for signature in signatures:
+                txCount += 1
+                x = threading.Thread(target=getTxDetail, args=(signature,))
+                threads.append(x)
+                x.start()
+            for index, thread in enumerate(threads):
+                thread.join()
+            if txCount >= maxTxCount:
+                break
+            else:
+                rounds += 1
+                lastSignature = solana.transaction.Signature.from_string(
+                    txs[-1]["signature"]
+                )
+            print(txCount)
+        self.processedTxArr = []
+        for tx in resultArr:
+            self.processedTxArr.append(self.processTx(tx))
+
+    def _get_accounts(self):
         try:
             self.base_token_account = get_token_account(
                 self.endpoint, self.owner.pubkey(), self.pool_keys["base_mint"]
@@ -88,8 +169,8 @@ class Liquidity:
         except:
             print("have to create a token account....")
             self.base_token_account = create_account(
-                secret_key,
-                wallet_address,
+                self.secret_key,
+                self.wallet_address,
                 self.pool_keys["program_id"],
                 self.pool_keys["str_base_mint"],
             )
@@ -105,20 +186,11 @@ class Liquidity:
             except:
                 print("have to create a token account...")
                 self.quote_token_account = create_account(
-                    secret_key,
-                    wallet_address,
+                    self.secret_key,
+                    self.wallet_address,
                     self.pool_keys["program_id"],
                     self.pool_keys["str_quote_mint"],
                 )
-        print("Got quote token account", self.pool_keys["str_quote_mint"])
-
-    def open(self):
-        self.conn = AsyncClient(self.endpoint, commitment=Commitment("confirmed"))
-        print("Made ASYNC client connection")
-
-    async def close(self):
-        await self.conn.close()
-        print("Closed ASYNC client connection")
 
     @staticmethod
     def make_simulate_pool_info_instruction(accounts):
@@ -315,3 +387,33 @@ class Liquidity:
             await asyncio.sleep(1)
             balance_after = await self.get_balance()
         return balance_after
+
+    def processTx(tx):
+        txSignature = tx["result"]["transaction"]["signatures"][0]
+        txSender = tx["result"]["transaction"]["message"]["accountKeys"][0]
+        blockTime = tx["result"]["blockTime"]
+        slot = tx["result"]["slot"]
+        postTokenBalances = tx["result"]["meta"]["postTokenBalances"]
+        preTokenBalances = tx["result"]["meta"]["preTokenBalances"]
+        tokenBalances = []
+        for pre, post in zip(preTokenBalances, postTokenBalances):
+            change = 0
+            if not (
+                post["uiTokenAmount"]["uiAmount"] is None
+                or pre["uiTokenAmount"]["uiAmount"] is None
+            ):
+                change = (
+                    post["uiTokenAmount"]["uiAmount"] - pre["uiTokenAmount"]["uiAmount"]
+                )
+            owner = pre["owner"]
+            token = pre["mint"]
+            if change != 0:
+                tokenBalances.append({"owner": owner, "token": token, "change": change})
+        result = {
+            "txSignature": txSignature,
+            "sender": txSender,
+            "blockTime": blockTime,
+            "slot": slot,
+            "tokenBalances": tokenBalances,
+        }
+        return result
