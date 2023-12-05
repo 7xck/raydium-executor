@@ -104,17 +104,8 @@ async def trade(
     time.sleep(8)
     sol_after = await amm.get_balance()
     sol_after = sol_after["sol"]
-    if sol_after < (size / 2):
-        print(
-            "Lost money, exiting all", "sol after:", sol_after, "  sol before:", sol_now
-        )
-        s_tx_two = await sell_leg(amm)
-        trade_results.s_tx_two = s_tx_two.to_json()
-    else:
-        print("Making money, waiting then selling all")
-        time.sleep(30)
-        s_tx_two = await sell_leg(amm)
-        trade_results.s_tx_two = s_tx_two.to_json()
+    s_tx_two = await sell_leg(amm)
+    trade_results.s_tx_two = s_tx_two.to_json()
     time.sleep(10)
     sol_after = await amm.get_balance()
     sol_after = sol_after["sol"]
@@ -175,7 +166,7 @@ def main():
     # Default values
     size = 0.5
     trade_open_time = -100
-    trade_length = 35
+    trade_length = 5
 
     # Process each argument for optional parameters
     for arg in sys.argv[2:]:
