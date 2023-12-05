@@ -180,9 +180,9 @@ def main():
         pool_id = sys.argv[1]
 
     # Default values
-    size = 0.5
+    size = 1
     trade_open_time = -100
-    trade_length = 5
+    trade_length = 30
 
     # Process each argument for optional parameters
     for arg in sys.argv[2:]:
