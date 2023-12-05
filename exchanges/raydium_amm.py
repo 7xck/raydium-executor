@@ -108,12 +108,20 @@ class Liquidity:
         return is_active
 
     def get_current_ds_price(self):
+        headers = {
+            "accept": "application/json",
+            "x-chain": "solana",
+            "X-API-KEY": "061eef71caa947a3b82c8dbda8bbdf63",  # api key just in birdeye docs? not even mine
+        }
+
+        params = {
+            "address": self.base_mint_str,
+        }
+
         response = requests.get(
-            url="https://api.dexscreener.com/latest/dex/pairs/solana/" + self.pool_id
+            "https://public-api.birdeye.so/defi/price", params=params, headers=headers
         )
-        target_stats = response.json()["pair"]
-        price_usd = target_stats["priceUsd"]
-        return float(price_usd)
+        return response.json()["data"]["value"]
 
     def get_dexscreener_stats(self):
         # use pool ID to hit api
