@@ -64,7 +64,7 @@ async def sell_leg(amm, half=False):
             coin_balances = await amm.get_balance()
             if half:
                 # round to floor
-                sell_size = int(coin_balances["coin"] / 2)
+                sell_size = int(coin_balances["coin"] * 0.80)
             else:
                 sell_size = coin_balances["coin"]
             sell_tx_result = await amm.sell(sell_size)
@@ -112,7 +112,7 @@ async def trade(
         trade_results.s_tx_two = s_tx_two.to_json()
     else:
         print("Making money, waiting then selling all")
-        time.sleep(2)
+        time.sleep(30)
         s_tx_two = await sell_leg(amm)
         trade_results.s_tx_two = s_tx_two.to_json()
     time.sleep(10)
@@ -173,7 +173,7 @@ def main():
         pool_id = sys.argv[1]
 
     # Default values
-    size = 0.5
+    size = 0.25
     trade_open_time = -100
     trade_length = 35
 
