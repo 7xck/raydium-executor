@@ -64,7 +64,7 @@ async def sell_leg(amm, half=False):
             coin_balances = await amm.get_balance()
             if half:
                 # round to floor
-                sell_size = int(coin_balances["coin"] * 0.80)
+                sell_size = int(coin_balances["coin"] * 0.90)
             else:
                 sell_size = coin_balances["coin"]
             sell_tx_result = await amm.sell(sell_size)
@@ -173,7 +173,7 @@ def main():
         pool_id = sys.argv[1]
 
     # Default values
-    size = 0.25
+    size = 0.5
     trade_open_time = -100
     trade_length = 35
 
