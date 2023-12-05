@@ -91,6 +91,7 @@ async def trade(
     # go now
     print("Buying...")
     b_tx = await buy_leg(amm, size)
+    entry_price = amm.get_current_ds_price()
     # get buy time
     trade_results.buy_time = pd.Timestamp.now()
     print("Sleeping until trade length expires or TP is hit...")
@@ -100,7 +101,6 @@ async def trade(
     trade_length = datetime.timedelta(seconds=trade_length)
     future_time = now + trade_length
     # get current price from dex screener
-    entry_price = amm.get_current_ds_price()
     tp = entry_price * 1.3
     while datetime.datetime.now() < future_time:
         # get current price
