@@ -107,6 +107,14 @@ class Liquidity:
         is_active = self.median_time_diff > pd.Timedelta(seconds=30)
         return is_active
 
+    def get_current_ds_price(self):
+        response = requests.get(
+            url="https://api.dexscreener.com/latest/dex/pairs/solana/" + self.pool_id
+        )
+        target_stats = response.json()["pair"]
+        price_usd = target_stats["priceUsd"]
+        return price_usd
+
     def get_dexscreener_stats(self):
         # use pool ID to hit api
         response = requests.get(

@@ -7,6 +7,7 @@ import time
 import sys
 import traceback
 from sqlalchemy import create_engine
+import datetime
 
 from exchanges.raydium_amm import Liquidity
 from models.trade_results import TradeResults
@@ -92,9 +93,24 @@ async def trade(
     b_tx = await buy_leg(amm, size)
     # get buy time
     trade_results.buy_time = pd.Timestamp.now()
-    # Get balances and sell
-    print("Sleeping until trade length expires...")
-    time.sleep(trade_length)
+    print("Sleeping until trade length expires or TP is hit...")
+    # get time now + trade length
+    # get current time
+    now = datetime.datetime.now()
+    trade_length = datetime.timedelta(seconds=trade_length)
+    future_time = now + trade_length
+    # get current price from dex screener
+    entry_price = amm.get_current_ds_price()
+    tp = entry_price * 1.3
+    while datetime.datetime.now() < future_time:
+        # get current price
+        latest_price = amm.get_current_ds_price()
+        print("got latest price", latest_price, "vs entry ", entry_price)
+        # check if current price meets condition
+        if latest_price >= tp:
+            break
+        # sleep for a while before checking again
+        time.sleep(1)  # sleep for 1 second
     print("Time to exit...")
     s_tx = await sell_leg(amm, half=True)
     # add sell time
