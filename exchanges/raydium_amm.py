@@ -113,7 +113,7 @@ class Liquidity:
         )
         target_stats = response.json()["pair"]
         price_usd = target_stats["priceUsd"]
-        return price_usd
+        return float(price_usd)
 
     def get_dexscreener_stats(self):
         # use pool ID to hit api
