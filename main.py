@@ -101,7 +101,7 @@ async def trade(
     trade_length = datetime.timedelta(seconds=trade_length)
     future_time = now + trade_length
     # get current price from dex screener
-    tp = entry_price * 1.3
+    tp = entry_price * 1.5
     while datetime.datetime.now() < future_time:
         # get current price
         latest_price = amm.get_current_ds_price()
@@ -112,16 +112,11 @@ async def trade(
         # sleep for a while before checking again
         time.sleep(1)  # sleep for 1 second
     print("Time to exit...")
-    s_tx = await sell_leg(amm, half=True)
+    s_tx = await sell_leg(amm)
     # add sell time
     trade_results.sell_time = pd.Timestamp.now()
     print("Sold position")
     print("Waiting for balance to update...")
-    time.sleep(8)
-    sol_after = await amm.get_balance()
-    sol_after = sol_after["sol"]
-    s_tx_two = await sell_leg(amm)
-    trade_results.s_tx_two = s_tx_two.to_json()
     time.sleep(10)
     sol_after = await amm.get_balance()
     sol_after = sol_after["sol"]
