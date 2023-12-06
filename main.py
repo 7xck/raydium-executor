@@ -101,7 +101,7 @@ async def trade(
     trade_length = datetime.timedelta(seconds=trade_length)
     future_time = now + trade_length
     # get current price from dex screener
-    tp = entry_price * 1.5
+    tp = entry_price * 2
     while datetime.datetime.now() < future_time:
         # get current price
         latest_price = amm.get_current_ds_price()
@@ -177,7 +177,7 @@ def main():
     # Default values
     size = 1
     trade_open_time = -100
-    trade_length = 25
+    trade_length = 60
 
     # Process each argument for optional parameters
     for arg in sys.argv[2:]:
