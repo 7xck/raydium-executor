@@ -106,6 +106,7 @@ async def trade(
         # get current price
         latest_price = amm.get_current_ds_price()
         print("got latest price", latest_price, "vs entry ", entry_price)
+        print("current approx. return:", latest_price / entry_price - 1)
         # check if current price meets condition
         if latest_price >= tp:
             break
