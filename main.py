@@ -65,7 +65,7 @@ async def sell_leg(amm, half=False):
             coin_balances = await amm.get_balance()
             if half:
                 # round to floor
-                sell_size = int(coin_balances["coin"] * 0.90)
+                sell_size = int(coin_balances["coin"] * 0.6)
             else:
                 sell_size = coin_balances["coin"]
             sell_tx_result = await amm.sell(sell_size)
@@ -103,15 +103,19 @@ async def trade(
     # get current price from dex screener
     tp = entry_price * 1.5
     while datetime.datetime.now() < future_time:
-        # get current price
-        latest_price = amm.get_current_ds_price()
-        print("got latest price", latest_price, "vs entry ", entry_price)
-        print("current approx. return:", latest_price / entry_price - 1)
-        # check if current price meets condition
-        if latest_price >= tp:
-            break
-        # sleep for a while before checking again
-        time.sleep(1)  # sleep for 1 second
+        try:
+            # get current price
+            latest_price = amm.get_current_ds_price()
+            print("got latest price", latest_price, "vs entry ", entry_price)
+            print("current approx. return:", latest_price / entry_price - 1)
+            # check if current price meets condition
+            if latest_price >= tp:
+                break
+            # sleep for a while before checking again
+            time.sleep(0.5)  # sleep for 1 second
+        except Exception as e:
+            print("error getting price", e)
+            continue
     print("Time to exit...")
     s_tx = await sell_leg(amm, half=True)
     # add sell time
