@@ -177,7 +177,7 @@ def main():
     # Default values
     size = 1
     trade_open_time = -100
-    trade_length = 30
+    trade_length = 25
 
     # Process each argument for optional parameters
     for arg in sys.argv[2:]:
