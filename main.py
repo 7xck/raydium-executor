@@ -60,6 +60,7 @@ async def buy_leg(amm, size=1):
 
 async def sell_leg(amm, half=False):
     tries = 0
+    reduce_size = 0
     while True:
         try:
             coin_balances = await amm.get_balance()
@@ -67,7 +68,7 @@ async def sell_leg(amm, half=False):
                 # round to floor
                 sell_size = int(coin_balances["coin"] * 0.6)
             else:
-                sell_size = coin_balances["coin"]
+                sell_size = coin_balances["coin"] - reduce_size
             sell_tx_result = await amm.sell(sell_size)
             print("Sold", sell_size)
             return sell_tx_result
@@ -75,6 +76,7 @@ async def sell_leg(amm, half=False):
             time.sleep(0.4)
             tries += 1
             print(f"Failed to sell, attempt {tries}")
+            reduce_size = 1
             continue
 
 
