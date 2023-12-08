@@ -99,21 +99,21 @@ async def trade(
     trade_length = datetime.timedelta(seconds=trade_length)
     future_time = now + trade_length
     # get current price from dex screener
-    tp = entry_price * 3
+    tp = entry_price * 1.8
     while datetime.datetime.now() < future_time:
         try:
             # get current price
             try:
                 latest_price = amm.get_current_ds_price()
             except:
-                latest_price = 1
+                latest_price = entry_price
             print("got latest price", latest_price, "vs entry ", entry_price)
             print("current approx. return:", latest_price / entry_price - 1)
             # check if current price meets condition
             if latest_price >= tp:
                 break
             # sleep for a while before checking again
-            time.sleep(2.5)  # sleep for 1 second
+            time.sleep(1.2)  # sleep for 1 second
         except Exception as e:
             print("error getting price", e)
             continue
@@ -125,7 +125,7 @@ async def trade(
     print("Waiting for balance to update...")
     time.sleep(5)
     await sell_leg(amm)
-    time.sleep(10)
+    time.sleep(15)
     sol_after = await amm.get_balance()
     sol_after = sol_after["sol"]
     trade_results.b_tx = b_tx.to_json()
