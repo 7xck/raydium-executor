@@ -39,7 +39,7 @@ def fetch_pool_keys(pool_id: str):
             break
         except Exception:
             traceback.print_exc()
-            time.sleep(15)
+            time.sleep(10)
             continue
 
     return {
