@@ -111,7 +111,7 @@ class Liquidity:
         headers = {
             "accept": "application/json",
             "x-chain": "solana",
-            "X-API-KEY": "061eef71caa947a3b82c8dbda8bbdf63",  # api key just in birdeye docs? not even mine
+            "X-API-KEY": "bccad36814664a5aac2cb7ae30710f9c",  # api key just in birdeye docs? not even mine
         }
 
         params = {

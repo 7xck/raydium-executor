@@ -123,7 +123,7 @@ async def trade(
     trade_results.sell_time = pd.Timestamp.now()
     print("Sold position")
     print("Waiting for balance to update...")
-    time.sleep(5)
+    time.sleep(10)
     await sell_leg(amm)
     time.sleep(10)
     sol_after = await amm.get_balance()

@@ -12,9 +12,11 @@ with open("config.json") as f:
     config = json.load(f)
 
 db_connection = create_engine(config["db"])
-all_pools = requests.get("https://api.raydium.io/v2/sdk/liquidity/mainnet.json").json()[
-    "unOfficial"
-]
+try:
+    all_pools = requests.get("https://api.raydium.io/v2/sdk/liquidity/mainnet.json")
+    all_pools = all_pools.json()["unOfficial"]
+except:
+    print(all_pools.text)
 
 # upload all_pools to postgres
 df = pd.DataFrame(all_pools)
