@@ -228,6 +228,7 @@ class Liquidity:
             self.quote_token_account = PublicKey.from_string(self.sol_pubkey)
         else:
             print("Sol ain't the quote, leave it, don't want to repeat of last time")
+            raise Exception
 
     @staticmethod
     def make_simulate_pool_info_instruction(accounts):
