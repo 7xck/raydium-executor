@@ -119,7 +119,7 @@ class Liquidity:
         }
 
         response = requests.get(
-            "https://public-api.birdeye.so/defi/price", params=params, headers=headers
+            "https://public-api.birdeye.so/public/price", params=params, headers=headers
         )
         return response.json()["data"]["value"]
 

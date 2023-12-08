@@ -46,16 +46,9 @@ def make_amm(pool_id, symbol="coin/sol"):
 
 
 async def buy_leg(amm, size=1):
-    try:
-        buy_tx_result = await amm.buy(size)
-        print("Bought", size)
-        return buy_tx_result
-    except RPCException as e:
-        print("reduce size")
-        size = size / 2
-        buy_tx_result = await amm.buy(size)
-        print("Bought", size)
-        return buy_tx_result
+    buy_tx_result = await amm.buy(size)
+    print("Bought", size)
+    return buy_tx_result
 
 
 async def sell_leg(amm, half=False):
@@ -93,7 +86,10 @@ async def trade(
     # go now
     print("Buying...")
     b_tx = await buy_leg(amm, size)
-    entry_price = amm.get_current_ds_price()
+    try:
+        entry_price = amm.get_current_ds_price()
+    except:
+        entry_price = 1
     # get buy time
     trade_results.buy_time = pd.Timestamp.now()
     print("Sleeping until trade length expires or TP is hit...")
@@ -103,18 +99,21 @@ async def trade(
     trade_length = datetime.timedelta(seconds=trade_length)
     future_time = now + trade_length
     # get current price from dex screener
-    tp = entry_price * 1.7
+    tp = entry_price * 1.8
     while datetime.datetime.now() < future_time:
         try:
             # get current price
-            latest_price = amm.get_current_ds_price()
+            try:
+                latest_price = amm.get_current_ds_price()
+            except:
+                latest_price = 1
             print("got latest price", latest_price, "vs entry ", entry_price)
             print("current approx. return:", latest_price / entry_price - 1)
             # check if current price meets condition
             if latest_price >= tp:
                 break
             # sleep for a while before checking again
-            time.sleep(0.5)  # sleep for 1 second
+            time.sleep(2.5)  # sleep for 1 second
         except Exception as e:
             print("error getting price", e)
             continue
