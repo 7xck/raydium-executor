@@ -227,18 +227,7 @@ class Liquidity:
         if self.pool_keys["str_quote_mint"] == self.sol_mint:
             self.quote_token_account = PublicKey.from_string(self.sol_pubkey)
         else:
-            try:
-                self.quote_token_account = get_token_account(
-                    self.endpoint, self.owner.pubkey(), self.pool_keys["quote_mint"]
-                )
-            except:
-                print("have to create a token account...")
-                self.quote_token_account = create_account(
-                    self.secret_key,
-                    self.wallet_address,
-                    self.pool_keys["program_id"],
-                    self.pool_keys["str_quote_mint"],
-                )
+            print("Sol ain't the quote, leave it, don't want to repeat of last time")
 
     @staticmethod
     def make_simulate_pool_info_instruction(accounts):
