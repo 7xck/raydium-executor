@@ -113,7 +113,7 @@ async def trade(
             if latest_price >= tp:
                 break
             # sleep for a while before checking again
-            time.sleep(0.75)  # sleep for 1 second
+            time.sleep(0.1)  # sleep for 1 second
         except Exception as e:
             print("error getting price", e)
             continue
