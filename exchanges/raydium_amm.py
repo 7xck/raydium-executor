@@ -367,8 +367,9 @@ class Liquidity:
                     SERUM_PROGRAM_ID,
                 )
             )
+            opts = TxOpts(skip_preflight=True, max_retries=3)
             print("built, sending now...")
-            return await self.conn.send_transaction(swap_tx, *signers)
+            return await self.conn.send_transaction(swap_tx, *signers, opts=opts)
         except:
             print(
                 "Failed to make swap instruction with serum program id, using alternate"
