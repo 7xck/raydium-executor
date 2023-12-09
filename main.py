@@ -113,7 +113,7 @@ async def trade(
             if latest_price >= tp:
                 break
             # sleep for a while before checking again
-            time.sleep(0.5)  # sleep for 1 second
+            time.sleep(0.75)  # sleep for 1 second
         except Exception as e:
             print("error getting price", e)
             continue
@@ -123,7 +123,7 @@ async def trade(
     trade_results.sell_time = pd.Timestamp.now()
     print("Sold position")
     print("Waiting for balance to update...")
-    time.sleep(10)
+    time.sleep(15)
     await sell_leg(amm)
     time.sleep(15)
     sol_after = await amm.get_balance()
@@ -183,7 +183,7 @@ def main():
         pool_id = sys.argv[1]
 
     # Default values
-    size = 1
+    size = 1.5
     trade_open_time = -100
     trade_length = 60
 
