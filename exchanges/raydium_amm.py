@@ -132,7 +132,11 @@ class Liquidity:
         # a couple checks to make sure we aren't gonna get fucked
         # grab the unix timestamp (which is in ms)
         # and if pair is only 5-10 minutes old, go true
-        created_at = target_stats["pairCreatedAt"]  # unix time ms
+        try:
+            created_at = target_stats["pairCreatedAt"]  # unix time ms
+        except:
+            # create an input and only continue when the user inputs anything
+            input("Press any key to continue...")
         current_time = int(time.time() * 1000)
         age_in_minutes = (current_time - created_at) / (60 * 1000)
         print("age in minutes:", age_in_minutes)
