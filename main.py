@@ -118,13 +118,10 @@ async def trade(
             print("error getting price", e)
             continue
     print("Time to exit...")
-    s_tx = await sell_leg(amm, half=True)
-    # add sell time
+    s_tx = await sell_leg(amm)
     trade_results.sell_time = pd.Timestamp.now()
     print("Sold position")
-    print("Waiting for balance to update...")
-    time.sleep(15)
-    await sell_leg(amm)
+
     time.sleep(15)
     sol_after = await amm.get_balance()
     sol_after = sol_after["sol"]
