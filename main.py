@@ -99,7 +99,7 @@ async def trade(
     trade_length = datetime.timedelta(seconds=trade_length)
     future_time = now + trade_length
     # get current price from dex screener
-    tp = entry_price * 1.8
+    tp = entry_price * 1.5
     while datetime.datetime.now() < future_time:
         try:
             # get current price
