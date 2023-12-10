@@ -137,6 +137,7 @@ class Liquidity:
         except:
             # create an input and only continue when the user inputs anything
             input("Press any key to continue...")
+            created_at = int(time.time() * 1000)
         current_time = int(time.time() * 1000)
         age_in_minutes = (current_time - created_at) / (60 * 1000)
         print("age in minutes:", age_in_minutes)

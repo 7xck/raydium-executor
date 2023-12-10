@@ -100,7 +100,7 @@ async def trade(
     trade_length = datetime.timedelta(seconds=trade_length)
     future_time = now + trade_length
     # get current price from dex screener
-    tp = entry_price * 1.5
+    tp = entry_price * 1.30
     while datetime.datetime.now() < future_time:
         try:
             # get current price
@@ -183,7 +183,7 @@ def main():
         pool_id = sys.argv[1]
 
     # Default values
-    size = 1.5
+    size = 1
     trade_open_time = -100
     trade_length = 60
 
