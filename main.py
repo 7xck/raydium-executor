@@ -80,18 +80,19 @@ async def trade(
 ):
     trade_results = TradeResults(amm.pool_id)
     print("Putting a trade on...")
-    sol_now = await amm.get_balance()
-    sol_now = sol_now["sol"]
-    print("Got SOL balance")
     # go now
     print("Buying...")
     b_tx = await buy_leg(amm, size)
+    # get buy time
+    trade_results.buy_time = pd.Timestamp.now()
+    # Save sol balance
+    sol_now = await amm.get_balance()
+    sol_now = sol_now["sol"]
+    print("Got SOL balance")
     try:
         entry_price = amm.get_current_ds_price()
     except:
         entry_price = 1
-    # get buy time
-    trade_results.buy_time = pd.Timestamp.now()
     print("Sleeping until trade length expires or TP is hit...")
     # get time now + trade length
     # get current time
