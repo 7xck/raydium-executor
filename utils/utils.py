@@ -32,7 +32,7 @@ def extract_pool_info(pools_list: list, pool_id: str) -> dict:
 
 
 def fetch_pool_keys(pool_id: str):
-    df = pd.read_sql(f"""SELECT * FROM all_pools WHERE id = {pool_id} """, engine)
+    df = pd.read_sql(f"""SELECT * FROM all_pools WHERE id = '{pool_id}' """, engine)
     if len(df.index) == 1:
         # turn it into a json dictionary because it will only be 1 row
         df = df.to_json(orient="records")
