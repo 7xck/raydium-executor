@@ -1,0 +1,115 @@
+{
+  "schemaVersion": "1.0.0",
+  "pairs": [
+    {
+      "chainId": "solana",
+      "dexId": "raydium",
+      "url": "https://dexscreener.com/solana/6guixw4mbnpxrge9rcq2mhjh3e8is8jzynd8boatax93",
+      "pairAddress": "6guiXw4mBNpXrGe9rcQ2mhJh3E8is8JZynd8BoAtAX93",
+      "baseToken": {
+        "address": "Ao3fKu6s2jH2vFHLWUchgf4mPWQ7G4FEttHa1xXv7Wio",
+        "name": "WOOD",
+        "symbol": "WOOD"
+      },
+      "quoteToken": {
+        "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "name": "USD Coin",
+        "symbol": "USDC"
+      },
+      "priceNative": "0.0000009108",
+      "priceUsd": "0.0000009108",
+      "txns": {
+        "m5": {
+          "buys": 0,
+          "sells": 0
+        },
+        "h1": {
+          "buys": 1,
+          "sells": 1
+        },
+        "h6": {
+          "buys": 1,
+          "sells": 1
+        },
+        "h24": {
+          "buys": 5,
+          "sells": 3
+        }
+      },
+      "volume": {
+        "h24": 73.23,
+        "h6": 54.84,
+        "h1": 54.84,
+        "m5": 0
+      },
+      "priceChange": {
+        "m5": 0,
+        "h1": -33.53,
+        "h6": -33.53,
+        "h24": -18.54
+      },
+      "liquidity": {
+        "usd": 254.49,
+        "base": 167956909,
+        "quote": 101.5124
+      },
+      "fdv": 721,
+      "pairCreatedAt": 1701274530000
+    }
+  ],
+  "pair": {
+    "chainId": "solana",
+    "dexId": "raydium",
+    "url": "https://dexscreener.com/solana/6guixw4mbnpxrge9rcq2mhjh3e8is8jzynd8boatax93",
+    "pairAddress": "6guiXw4mBNpXrGe9rcQ2mhJh3E8is8JZynd8BoAtAX93",
+    "baseToken": {
+      "address": "Ao3fKu6s2jH2vFHLWUchgf4mPWQ7G4FEttHa1xXv7Wio",
+      "name": "WOOD",
+      "symbol": "WOOD"
+    },
+    "quoteToken": {
+      "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "name": "USD Coin",
+      "symbol": "USDC"
+    },
+    "priceNative": "0.0000009108",
+    "priceUsd": "0.0000009108",
+    "txns": {
+      "m5": {
+        "buys": 0,
+        "sells": 0
+      },
+      "h1": {
+        "buys": 1,
+        "sells": 1
+      },
+      "h6": {
+        "buys": 1,
+        "sells": 1
+      },
+      "h24": {
+        "buys": 5,
+        "sells": 3
+      }
+    },
+    "volume": {
+      "h24": 73.23,
+      "h6": 54.84,
+      "h1": 54.84,
+      "m5": 0
+    },
+    "priceChange": {
+      "m5": 0,
+      "h1": -33.53,
+      "h6": -33.53,
+      "h24": -18.54
+    },
+    "liquidity": {
+      "usd": 254.49,
+      "base": 167956909,
+      "quote": 101.5124
+    },
+    "fdv": 721,
+    "pairCreatedAt": 1701274530000
+  }
+}

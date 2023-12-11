@@ -7,6 +7,7 @@ import time
 import sys
 import traceback
 from sqlalchemy import create_engine
+import datetime
 
 from exchanges.raydium_amm import Liquidity
 from models.trade_results import TradeResults
@@ -45,28 +46,22 @@ def make_amm(pool_id, symbol="coin/sol"):
 
 
 async def buy_leg(amm, size=1):
-    try:
-        buy_tx_result = await amm.buy(size)
-        print("Bought", size)
-        return buy_tx_result
-    except RPCException as e:
-        print("reduce size")
-        size = size / 2
-        buy_tx_result = await amm.buy(size)
-        print("Bought", size)
-        return buy_tx_result
+    buy_tx_result = await amm.buy(size)
+    print("Bought", size)
+    return buy_tx_result
 
 
 async def sell_leg(amm, half=False):
     tries = 0
+    reduce_size = 0
     while True:
         try:
             coin_balances = await amm.get_balance()
             if half:
                 # round to floor
-                sell_size = int(coin_balances["coin"] / 2)
+                sell_size = int(coin_balances["coin"] * 0.6)
             else:
-                sell_size = coin_balances["coin"]
+                sell_size = coin_balances["coin"] - reduce_size
             sell_tx_result = await amm.sell(sell_size)
             print("Sold", sell_size)
             return sell_tx_result
@@ -74,6 +69,7 @@ async def sell_leg(amm, half=False):
             time.sleep(0.4)
             tries += 1
             print(f"Failed to sell, attempt {tries}")
+            reduce_size = 1
             continue
 
 
@@ -82,40 +78,54 @@ async def trade(
     size,
     trade_length,  # seconds
 ):
-    trade_results = TradeResults(amm.pool_id)
-    print("Putting a trade on...")
-    sol_now = await amm.get_balance()
-    sol_now = sol_now["sol"]
-    print("Got SOL balance")
-    # go now
     print("Buying...")
     b_tx = await buy_leg(amm, size)
     # get buy time
+    trade_results = TradeResults(amm.pool_id)
+    print("Putting a trade on...")
+    # go now
     trade_results.buy_time = pd.Timestamp.now()
-    # Get balances and sell
-    print("Sleeping until trade length expires...")
-    time.sleep(trade_length)
+    # Save sol balance
+    sol_now = await amm.get_balance()
+    sol_now = sol_now["sol"]
+    print("Got SOL balance")
+    try:
+        entry_price = amm.get_current_ds_price()
+    except:
+        entry_price = 1
+    print("Sleeping until trade length expires or TP is hit...")
+    # get time now + trade length
+    # get current time
+    now = datetime.datetime.now()
+    trade_length = datetime.timedelta(seconds=trade_length)
+    future_time = now + trade_length
+    # get current price from dex screener
+    tp = entry_price * 1.30
+    while datetime.datetime.now() < future_time:
+        try:
+            # get current price
+            try:
+                latest_price = amm.get_current_ds_price()
+            except:
+                latest_price = entry_price
+            print("got latest price", latest_price, "vs entry ", entry_price)
+            print("current approx. return:", latest_price / entry_price - 1)
+            # check if current price meets condition
+            if latest_price >= tp:
+                break
+            # sleep for a while before checking again
+            time.sleep(0.1)  # sleep for 1 second
+        except Exception as e:
+            print("error getting price", e)
+            continue
     print("Time to exit...")
     s_tx = await sell_leg(amm, half=True)
-    # add sell time
     trade_results.sell_time = pd.Timestamp.now()
-    print("Sold position")
-    print("Waiting for balance to update...")
-    time.sleep(8)
-    sol_after = await amm.get_balance()
-    sol_after = sol_after["sol"]
-    if sol_after < (size / 2):
-        print(
-            "Lost money, exiting all", "sol after:", sol_after, "  sol before:", sol_now
-        )
-        s_tx_two = await sell_leg(amm)
-        trade_results.s_tx_two = s_tx_two.to_json()
-    else:
-        print("Making money, waiting then selling all")
-        time.sleep(2)
-        s_tx_two = await sell_leg(amm)
-        trade_results.s_tx_two = s_tx_two.to_json()
-    time.sleep(10)
+    print("Sold position, first")
+    time.sleep(15)
+    s_tx_two = await sell_leg(amm)
+    trade_results.s_tx_two = s_tx_two.to_json()
+    time.sleep(15)
     sol_after = await amm.get_balance()
     sol_after = sol_after["sol"]
     trade_results.b_tx = b_tx.to_json()
@@ -173,9 +183,9 @@ def main():
         pool_id = sys.argv[1]
 
     # Default values
-    size = 0.5
+    size = 1
     trade_open_time = -100
-    trade_length = 35
+    trade_length = 60
 
     # Process each argument for optional parameters
     for arg in sys.argv[2:]:

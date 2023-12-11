@@ -12,9 +12,11 @@ with open("config.json") as f:
     config = json.load(f)
 
 db_connection = create_engine(config["db"])
-all_pools = requests.get("https://api.raydium.io/v2/sdk/liquidity/mainnet.json").json()[
-    "unOfficial"
-]
+try:
+    all_pools = requests.get("https://api.raydium.io/v2/sdk/liquidity/mainnet.json")
+    all_pools = all_pools.json()["unOfficial"]
+except:
+    print(all_pools.text)
 
 # upload all_pools to postgres
 df = pd.DataFrame(all_pools)
@@ -58,11 +60,15 @@ while True:
         unseen_pools.to_sql("all_pools", db_connection, if_exists="append")
 
     for idx, row in unseen_pools.iterrows():
-        create_account(
-            config["private_key"],
-            config["wallet_add"],
-            row["programId"],
-            row["baseMint"],
-        )
-        print("created account")
-    time.sleep(120)
+        try:
+            create_account(
+                config["private_key"],
+                config["wallet_add"],
+                row["programId"],
+                row["baseMint"],
+            )
+            print("created account for ", row["baseMint"])
+        except:
+            print("failed to create account for ", row["baseMint"])
+            continue
+    time.sleep(30)

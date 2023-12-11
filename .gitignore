@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+pools1.json
+pools2.json
+
 env_wallet/
 
 config.json
