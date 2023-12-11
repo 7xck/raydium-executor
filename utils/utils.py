@@ -7,12 +7,17 @@ import json
 import time
 import traceback
 import pandas as pd
+from sqlalchemy import create_engine
 
 
 def load_config(file_path: str):
     """Load configuration from a JSON file."""
     with open(file_path) as file:
         return json.load(file)
+
+
+# get db engine
+engine = create_engine(load_config("config.json")["db"])
 
 
 def extract_pool_info(pools_list: list, pool_id: str) -> dict:
@@ -27,6 +32,36 @@ def extract_pool_info(pools_list: list, pool_id: str) -> dict:
 
 
 def fetch_pool_keys(pool_id: str):
+    df = pd.read_sql(f"""SELECT * FROM all_pools WHERE id = {pool_id} """, engine)
+    if len(df.index) == 1:
+        # turn it into a json dictionary because it will only be 1 row
+        df = df.to_json(orient="records")
+        amm_info = json.loads(df)[0]
+        print("found pool in db!")
+        return {
+            "amm_id": PublicKey.from_string(pool_id),
+            "authority": PublicKey.from_string(amm_info["authority"]),
+            "base_mint": PublicKey.from_string(amm_info["baseMint"]),
+            "base_decimals": amm_info["baseDecimals"],
+            "quote_mint": PublicKey.from_string(amm_info["quoteMint"]),
+            "quote_decimals": amm_info["quoteDecimals"],
+            "lp_mint": PublicKey.from_string(amm_info["lpMint"]),
+            "open_orders": PublicKey.from_string(amm_info["openOrders"]),
+            "target_orders": PublicKey.from_string(amm_info["targetOrders"]),
+            "base_vault": PublicKey.from_string(amm_info["baseVault"]),
+            "quote_vault": PublicKey.from_string(amm_info["quoteVault"]),
+            "market_id": PublicKey.from_string(amm_info["marketId"]),
+            "market_base_vault": PublicKey.from_string(amm_info["marketBaseVault"]),
+            "market_quote_vault": PublicKey.from_string(amm_info["marketQuoteVault"]),
+            "market_authority": PublicKey.from_string(amm_info["marketAuthority"]),
+            "bids": PublicKey.from_string(amm_info["marketBids"]),
+            "asks": PublicKey.from_string(amm_info["marketAsks"]),
+            "event_queue": PublicKey.from_string(amm_info["marketEventQueue"]),
+            "program_id": amm_info["programId"],
+            "str_quote_mint": amm_info["quoteMint"],
+            "str_base_mint": amm_info["baseMint"],
+        }
+
     while True:
         start_time = pd.Timestamp.now()
         all_pools = requests.get(

@@ -87,4 +87,5 @@ while True:
         except:
             print("failed to create account for ", row["baseMint"], row["quoteMint"])
             continue
+    print("sleeping for 25")
     time.sleep(25)
