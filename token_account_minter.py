@@ -42,11 +42,15 @@ while True:
 
     # upload all_pools to postgres
     df = pd.DataFrame(all_pools)
-    df = df[df["quoteMint"] == "So11111111111111111111111111111111111111112"]
+    df = df[
+        (df["quoteMint"] == "So11111111111111111111111111111111111111112")
+        | (df["baseMint"] == "So11111111111111111111111111111111111111112")
+    ]
 
     seen_pools = pd.read_sql(
         """SELECT * FROM all_pools WHERE 
-                            "quoteMint" = 'So11111111111111111111111111111111111111112' """,
+                            "quoteMint" = 'So11111111111111111111111111111111111111112'
+                            OR "baseMint" = 'So11111111111111111111111111111111111111112' """,
         db_connection,
     )
 
@@ -61,14 +65,26 @@ while True:
 
     for idx, row in unseen_pools.iterrows():
         try:
-            create_account(
-                config["private_key"],
-                config["wallet_add"],
-                row["programId"],
-                row["baseMint"],
-            )
-            print("created account for ", row["baseMint"])
+            if row["quoteMint"] == "So11111111111111111111111111111111111111112":
+                print("creating account for ", row["baseMint"])
+                create_account(
+                    config["private_key"],
+                    config["wallet_add"],
+                    row["programId"],
+                    row["baseMint"],
+                )
+                print("created account for ", row["baseMint"])
+            else:
+                print("creating account for ", row["quoteMint"])
+                create_account(
+                    config["private_key"],
+                    config["wallet_add"],
+                    row["programId"],
+                    row["quoteMint"],
+                )
+                print("created account for ", row["quoteMint"])
+
         except:
-            print("failed to create account for ", row["baseMint"])
+            print("failed to create account for ", row["baseMint"], row["quoteMint"])
             continue
-    time.sleep(30)
+    time.sleep(25)
