@@ -78,12 +78,12 @@ async def trade(
     size,
     trade_length,  # seconds
 ):
-    trade_results = TradeResults(amm.pool_id)
-    print("Putting a trade on...")
-    # go now
     print("Buying...")
     b_tx = await buy_leg(amm, size)
     # get buy time
+    trade_results = TradeResults(amm.pool_id)
+    print("Putting a trade on...")
+    # go now
     trade_results.buy_time = pd.Timestamp.now()
     # Save sol balance
     sol_now = await amm.get_balance()
