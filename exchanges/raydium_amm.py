@@ -113,10 +113,14 @@ class Liquidity:
             "x-chain": "solana",
             "X-API-KEY": "bccad36814664a5aac2cb7ae30710f9c",  # api key just in birdeye docs? not even mine
         }
-
-        params = {
-            "address": self.base_mint_str,
-        }
+        if self.base_mint_str != self.sol_mint:
+            params = {
+                "address": self.base_mint_str,
+            }
+        else:
+            params = {
+                "address": self.pool_keys["str_quote_mint"],
+            }
 
         response = requests.get(
             "https://public-api.birdeye.so/defi/price", params=params, headers=headers
