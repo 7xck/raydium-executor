@@ -102,10 +102,8 @@ def fetch_pool_keys(pool_id: str):
     }
 
 
-def get_token_account(endpoint: str, owner: PublicKey, mint: PublicKey):
-    account_data = Client(endpoint).get_token_accounts_by_owner(
-        owner, TokenAccountOpts(mint)
-    )
+def get_token_account(client, owner: PublicKey, mint: PublicKey):
+    account_data = client.get_token_accounts_by_owner(owner, TokenAccountOpts(mint))
     print("mint", account_data.value[0].pubkey)
     return account_data.value[0].pubkey
 

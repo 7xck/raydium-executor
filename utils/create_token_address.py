@@ -32,7 +32,7 @@ class Solana_Simplified:
             str
         ] = "https://solana-mainnet.core.chainstack.com/00147e525c8e83a2f2c57f823fc40d96",
     ):
-        solana_client = Client(development_url)
+        solana_client = Client(development_url, timeout=30)
         return solana_client
 
     def set_spl_client(
@@ -52,22 +52,24 @@ class Solana_Simplified:
     def get_token_wallet_address_from_main_wallet_address(
         spl_client: Token, main_wallet_address: Pubkey
     ):
-        # try:
-        #     token_wallet_address_public_key = (
-        #         spl_client.get_accounts_by_owner(
-        #             owner=main_wallet_address, commitment=None, encoding="base64"
-        #         )
-        #         .value[0]
-        #         .pubkey
-        #     )
-        #     print("Got the token account for the coin")
-        # except:
-        token_wallet_address_public_key = spl_client.create_associated_token_account(
-            owner=main_wallet_address,
-            skip_confirmation=False,
-            recent_blockhash=None,
-        )
-        print("Created a token account for the coin")
+        try:
+            token_wallet_address_public_key = (
+                spl_client.get_accounts_by_owner(
+                    owner=main_wallet_address, commitment=None, encoding="base64"
+                )
+                .value[0]
+                .pubkey
+            )
+            print("Got the token account for the coin")
+        except:
+            token_wallet_address_public_key = (
+                spl_client.create_associated_token_account(
+                    owner=main_wallet_address,
+                    skip_confirmation=False,
+                    recent_blockhash=None,
+                )
+            )
+            print("Created a token account for the coin")
         return token_wallet_address_public_key
 
 

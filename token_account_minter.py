@@ -5,6 +5,7 @@ import pandas as pd
 from utils.create_token_address import create_account
 import time
 import json
+import traceback
 
 # read config.json
 # so gay
@@ -84,8 +85,10 @@ while True:
                 )
                 print("created account for ", row["quoteMint"])
 
-        except:
+        except Exception as exc:
+            print(exc)
+            traceback.print_exc()
             print("failed to create account for ", row["baseMint"], row["quoteMint"])
             continue
     print("sleeping for 25")
-    time.sleep(25)
+    time.sleep(60)

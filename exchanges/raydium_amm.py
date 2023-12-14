@@ -90,7 +90,7 @@ class Liquidity:
         self.wallet_address = wallet_address
         self.base_symbol, self.quote_symbol = symbol.split("/")
         self.sol_mint = "So11111111111111111111111111111111111111112"
-        self.sol_pubkey = "4ec6WNxekXf9YoiBTXWnGhE5jfTSLTnsTU7EqPvEiBdA"
+        self.sol_pubkey = "4LpkzDXu3tQhX3ndd3hJxC3NDPx4R3fBCjK3v6QTAEEs"
         print("Finished initializing liquidity pool")
         print("Trying to set token accounts...")
         self._get_accounts()
@@ -221,7 +221,7 @@ class Liquidity:
     def _get_accounts(self):
         try:
             self.base_token_account = get_token_account(
-                self.endpoint, self.owner.pubkey(), self.pool_keys["base_mint"]
+                self.client, self.owner.pubkey(), self.pool_keys["base_mint"]
             )
         except:
             print("have to create a token account....")
@@ -238,7 +238,7 @@ class Liquidity:
         else:
             try:
                 self.quote_token_account = get_token_account(
-                    self.endpoint, self.owner.pubkey(), self.pool_keys["quote_mint"]
+                    self.client, self.owner.pubkey(), self.pool_keys["quote_mint"]
                 )
             except:
                 print("have to create a token account....")
@@ -343,7 +343,7 @@ class Liquidity:
                     amount_in, token_account_in, token_account_out, self.pool_keys
                 )
             )
-            opts = TxOpts(skip_preflight=True, max_retries=3)
+            opts = TxOpts(skip_preflight=True, max_retries=10)
             print("Built swap tx instructions, ")
             return await self.conn.send_transaction(swap_tx, *signers, opts=opts)
         except:
@@ -382,7 +382,7 @@ class Liquidity:
                     SERUM_PROGRAM_ID,
                 )
             )
-            opts = TxOpts(skip_preflight=True, max_retries=3)
+            opts = TxOpts(skip_preflight=True, max_retries=10)
             print("built, sending now...")
             return await self.conn.send_transaction(swap_tx, *signers, opts=opts)
         except:
