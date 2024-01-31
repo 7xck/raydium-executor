@@ -7,6 +7,8 @@ import time
 import json
 import traceback
 
+sol_mint = "So11111111111111111111111111111111111111112"
+
 # read config.json
 # so gay
 with open("config.json") as f:
@@ -14,14 +16,17 @@ with open("config.json") as f:
 
 db_connection = create_engine(config["db"])
 try:
-    all_pools = requests.get("https://api.raydium.io/v2/sdk/liquidity/mainnet.json")
-    all_pools = all_pools.json()["unOfficial"]
-except:
-    print(all_pools.text)
+    # Open the local JSON file
+    with open("/home/ubuntu/raydium_exe_dev/mainnet.json", "r") as file:
+        data = json.load(file)
+        all_pools = data["unOfficial"]
+except Exception as e:
+    # Handle exceptions, e.g., file not found, JSON decode error, etc.
+    print("An error occurred:", e)
 
 # upload all_pools to postgres
 df = pd.DataFrame(all_pools)
-df = df[df["quoteMint"] == "So11111111111111111111111111111111111111112"]
+df = df[df["quoteMint"] == sol_mint]
 
 seen_pools = pd.read_sql(
     """SELECT * FROM all_pools WHERE 
@@ -37,15 +42,18 @@ if len(unseen_pools.index) > 0:
     unseen_pools = unseen_pools.set_index("id")
     unseen_pools.to_sql("all_pools", db_connection, if_exists="append")
 while True:
-    all_pools = requests.get(
-        "https://api.raydium.io/v2/sdk/liquidity/mainnet.json"
-    ).json()["unOfficial"]
+    try:
+        with open("/home/ubuntu/raydium_exe_dev/mainnet.json", "r") as file:
+            data = json.load(file)
+            all_pools = data["unOfficial"]
+    except:
+        continue
 
     # upload all_pools to postgres
     df = pd.DataFrame(all_pools)
     df = df[
-        (df["quoteMint"] == "So11111111111111111111111111111111111111112")
-        | (df["baseMint"] == "So11111111111111111111111111111111111111112")
+        (df["quoteMint"] == sol_mint)
+        | (df["baseMint"] == sol_mint)
     ]
 
     seen_pools = pd.read_sql(
@@ -66,7 +74,7 @@ while True:
 
     for idx, row in unseen_pools.iterrows():
         try:
-            if row["quoteMint"] == "So11111111111111111111111111111111111111112":
+            if row["quoteMint"] == sol_mint:
                 print("creating account for ", row["baseMint"])
                 create_account(
                     config["private_key"],
@@ -90,5 +98,3 @@ while True:
             traceback.print_exc()
             print("failed to create account for ", row["baseMint"], row["quoteMint"])
             continue
-    print("sleeping for 25")
-    time.sleep(60)

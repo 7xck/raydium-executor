@@ -11,15 +11,14 @@ import datetime
 
 from exchanges.raydium_amm import Liquidity
 from models.trade_results import TradeResults
-from utils.utils import load_config
-from solana.rpc.core import RPCException
+from utils.utils import load_config, purchase_info
 
 # Configuration file for setup
 CONFIG_FILE = "config.json"
 config = load_config(CONFIG_FILE)
 
 # Default Pool ID if not provided as command line argument
-DEFAULT_POOL_ID = "2CTX11qNHNmiCt74H14vVSfn9RgtCUraEkuAgSbTAdZt"
+DEFAULT_POOL_ID = "EP2ib6dYdEeqD8MfE2ezHCxX3kP3K2eLKkirfPm5eyMx"
 ENGINE = create_engine(config["db"])
 
 
@@ -127,11 +126,42 @@ async def handle_trade(amm, size, trade_length, buy_func, sell_func):
     trade_results = TradeResults(amm.pool_id)
     print("Putting a trade on...")
     trade_results.buy_time = pd.Timestamp.now()
+
+    try:
+        entry_price = amm.get_current_ds_price()
+    except:
+        entry_price = 1
+
+    now = datetime.datetime.now()
+    trade_length_delta = datetime.timedelta(seconds=trade_length)
+    future_time = now + trade_length_delta
+
+    tp = entry_price * 1.85
+
+    while datetime.datetime.now() < future_time:
+        try:
+            # get current price
+            try:
+                latest_price = amm.get_current_ds_price()
+            except:
+                latest_price = entry_price
+            print("got latest price", latest_price, "vs entry ", entry_price)
+            print("current approx. return:", latest_price / entry_price - 1)
+            # check if current price meets condition
+            if latest_price >= tp:
+                break
+            # sleep for a while before checking again
+            time.sleep(5)  # sleep for 1 second
+        except Exception as e:
+            print("error getting price", e)
+            continue
+
     time.sleep(trade_length)
+
     s_tx = await sell_func(amm, trade_results)
     trade_results.sell_time = pd.Timestamp.now()
     print("Sold position, first")
-    time.sleep(15)
+    time.sleep(20)
     if amm.pool_keys["str_quote_mint"] == amm.sol_mint:
         sol_after = await amm.get_balance()
         sol_after = sol_after["sol"]
@@ -196,9 +226,9 @@ def main():
         pool_id = sys.argv[1]
 
     # Default values
-    size = 0.5
+    size = 0.15
     trade_open_time = -100
-    trade_length = 5
+    trade_length = 20
 
     # Process each argument for optional parameters
     for arg in sys.argv[2:]:

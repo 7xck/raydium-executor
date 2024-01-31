@@ -6,6 +6,10 @@ __pycache__/
 pools1.json
 pools2.json
 
+pools/node_modules/
+mainnet.json
+exchanges/CEX_deprecated.py
+
 env_wallet/
 
 config.json

@@ -78,7 +78,9 @@ class Liquidity:
         self.client = Client(self.endpoint, commitment=Commitment("confirmed"))
         self.pool_id = pool_id
         self.open()
-        self.is_active = self.get_dexscreener_stats()  # self.get_trade_activity()
+        self.is_active = (
+            True  # self.get_dexscreener_stats()  # self.get_trade_activity()
+        )
         if not self.is_active:
             raise Exception("POOL IS ILLIQUID AF, ABORTING")
         print("Started fetching pool keys", pd.Timestamp.now() - start_time)
@@ -111,7 +113,7 @@ class Liquidity:
         headers = {
             "accept": "application/json",
             "x-chain": "solana",
-            "X-API-KEY": "bccad36814664a5aac2cb7ae30710f9c",  # api key just in birdeye docs? not even mine
+            "X-API-KEY": "3ca4b21f803540a894878ca0e4f95565",  # api key just in birdeye docs? not even mine
         }
         if self.base_mint_str != self.sol_mint:
             params = {
@@ -123,7 +125,7 @@ class Liquidity:
             }
 
         response = requests.get(
-            "https://public-api.birdeye.so/defi/price", params=params, headers=headers
+            "https://public-api.birdeye.so/public/price", params=params, headers=headers # they killed the api key lol, public endpoint it is
         )
         return response.json()["data"]["value"]
 
@@ -136,6 +138,7 @@ class Liquidity:
         # a couple checks to make sure we aren't gonna get fucked
         # grab the unix timestamp (which is in ms)
         # and if pair is only 5-10 minutes old, go true
+        # usually if > 5-10 mins old it's a fake LP burn
         try:
             created_at = target_stats["pairCreatedAt"]  # unix time ms
         except:
@@ -271,7 +274,9 @@ class Liquidity:
             ),
         ]
         data = POOL_INFO_LAYOUT.build(dict(instruction=12, simulate_type=0))
-        return TransactionInstruction(keys, AMM_PROGRAM_ID, data)
+        return TransactionInstruction(
+            accounts=keys, program_id=AMM_PROGRAM_ID, data=data
+        )
 
     def make_swap_instruction(
         self,
@@ -406,16 +411,15 @@ class Liquidity:
             return await self.conn.send_transaction(swap_tx, *signers)
 
     async def simulate_get_market_info(self):
-        recent_block_hash = (await self.conn.get_recent_blockhash())["result"]["value"][
-            "blockhash"
-        ]
+        recent_block_hash = (await self.conn.get_latest_blockhash()).value.blockhash
         tx = Transaction(
             recent_blockhash=recent_block_hash, fee_payer=self.owner.pubkey()
         )
         tx.add(self.make_simulate_pool_info_instruction(self.pool_keys))
         signers = [self.owner]
         tx.sign(*signers)
-        res = (await self.conn.simulate_transaction(tx))["result"]["value"]["logs"][1]
+        res = await self.conn.simulate_transaction(tx)
+        x = res.value.logs[1]
         pool_info = literal_eval(re.search("({.+})", res).group(0))
         return pool_info
 

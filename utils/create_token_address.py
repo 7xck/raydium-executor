@@ -65,7 +65,7 @@ class Solana_Simplified:
             token_wallet_address_public_key = (
                 spl_client.create_associated_token_account(
                     owner=main_wallet_address,
-                    skip_confirmation=False,
+                    skip_confirmation=True,
                     recent_blockhash=None,
                 )
             )
