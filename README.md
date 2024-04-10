@@ -1,5 +1,5 @@
 do fast execution on raydium (at one point i think i was one of the fastest on raydium shit coins and fresh listings)
-Run pools/index.ts independently of main.py
+Run pools/index.ts independently of main.py. The original purpose of this project was to get an executor that can instantaneously trade on new listings on Raydium. Trading new listings on Raydium using the website interface is nearly impossible, and often times the website is behind the chain (new listings don't show up).
 
 python3 main.py <pool_id> to execute a trade 
 
