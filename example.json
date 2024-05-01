@@ -1,0 +1,6 @@
+{
+    "private_key": "wallet pkey",
+    "rpc": "rpc url",
+    "db": "postgresql://user:pass@host:port/db",
+    "wallet_add": "wallet address"
+}
