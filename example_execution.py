@@ -29,7 +29,7 @@ result = requests.get(
 result_json = result.json()
 result_json["unOfficial"]
 for x in result_json["unOfficial"]:
-    if x["id"] == "GWPhTkaooeH7J8CDQ5bxoVHv4HHaBYx6tMtowSFmxwze":
+    if x["id"] == "BeuMFQpR3j1oZCNLs3nVfDRwQqdADojfEmn2dGKGUEc3":
         print("found pool")
         pool_data = x
 
@@ -106,8 +106,7 @@ executor = RaydiumExecutor(
 async def main():
     print(executor.pool_keys['base_mint'])
     print(executor.pool_keys['quote_mint'])
-    print("ARE THESE THE RIGHT WAY AROUND? IF NOT, YOU WILL SPEND ALL YOUR SOL WHEN THE PROGRAM TRIES TO SELL!!!")
-    print("THIS SCRIPT ASSUMES SOL IS ALWAYS THE QUOTE MINT!")
+    print("ARE THESE THE RIGHT WAY AROUND? If not, we'll swap em around")
     if "So111111111" in executor.pool_keys['base_mint']:
         print("SOL is the base mint")
         print("reversing the scripts funcs...")
