@@ -29,7 +29,7 @@ result = requests.get(
 result_json = result.json()
 result_json["unOfficial"]
 for x in result_json["unOfficial"]:
-    if x["id"] == "6UYbX1x8YUcFj8YstPYiZByG7uQzAq2s46ZWphUMkjg5":
+    if x["id"] == "GWPhTkaooeH7J8CDQ5bxoVHv4HHaBYx6tMtowSFmxwze":
         print("found pool")
         pool_data = x
 
@@ -105,15 +105,31 @@ executor = RaydiumExecutor(
 # NO REALLY, READ THE ABOVE AND UNDERSTAND IT BEFORE WONDERING WHY YOU CAN'T GET A SUCCESSFUL SWAP!!!
 async def main():
     print(executor.pool_keys['base_mint'])
-    await executor.buy(
-        amount=0.025
-    )
-    time.sleep(30)
-    balances = await executor.get_balances()
-    balance_of_the_coin_we_just_bought = balances[formatted_pool_keys['base_mint']]
-    await executor.sell(
-        amount=balance_of_the_coin_we_just_bought
-    )
+    print(executor.pool_keys['quote_mint'])
+    print("ARE THESE THE RIGHT WAY AROUND? IF NOT, YOU WILL SPEND ALL YOUR SOL WHEN THE PROGRAM TRIES TO SELL!!!")
+    print("THIS SCRIPT ASSUMES SOL IS ALWAYS THE QUOTE MINT!")
+    if "So111111111" in executor.pool_keys['base_mint']:
+        print("SOL is the base mint")
+        print("reversing the scripts funcs...")
+        await executor.sell(
+            amount=0.025
+        )
+        time.sleep(30)
+        balances = await executor.get_balances()
+        balance_of_the_coin_we_just_bought = balances[formatted_pool_keys['quote_mint']]
+        await executor.buy(
+            amount=balance_of_the_coin_we_just_bought
+        )
+    else:
+        await executor.buy(
+            amount=0.025
+        )
+        time.sleep(30)
+        balances = await executor.get_balances()
+        balance_of_the_coin_we_just_bought = balances[formatted_pool_keys['base_mint']]
+        await executor.sell(
+            amount=balance_of_the_coin_we_just_bought
+        )
 
 
 asyncio.run(main())
