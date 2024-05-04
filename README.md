@@ -4,3 +4,6 @@ Run pools/index.ts independently of main.py. The original purpose of this projec
 python3 main.py <pool_id> to execute a trade 
 
 Sorry this is super rough, I ran this as like a manual executor that was just way faster than getting into the book through Raydium's website. If you have any Q's hit me up on TG I will try to help -- I whipped it together quite roughly as I was trying to exploit the sol shitcoin mania of Nov/December 2023. I also found using Raydium with Python SUPER difficult
+
+
+Buy me a coffee with some SOL if you get some use out of this :+1: BSkJRoXu1GLvw7pRVXDm5JEDdg56HjKcRxeBa1emUqVu
