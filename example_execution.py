@@ -4,7 +4,7 @@ from raydium_executor import RaydiumExecutor
 
 #%%
 # Define your wallet details and crap
-rpc_endpoint = "https://solana-api.projectserum.com/"  # best to use a paid RPC, I liked chainstack.
+rpc_endpoint = "https://api.mainnet-beta.solana.com"  # best to use a paid RPC, I liked chainstack.
 wallet_secret = "..."  # literally just your wallet secret key
 wallet_address = "..."  # literally just your wallet address...
 
@@ -81,6 +81,15 @@ executor = RaydiumExecutor(
     pool_keys=formatted_pool_keys
 )
 #%%
+# YOU NEED TO HAVE WSOL IN YOUR WALLET, NOT NORMAL SOL!!!!!
+# YOU CAN DO THIS BY WRAPPING SOL on JUP.AG
+# READ MORE ABOUT HOW TO TO DO THIS HERE: https://station.jup.ag/guides/general/wrapped-sol
+# OR JUST GOOGLE IT
+# FYI: IN THE BACKGROUND THIS IS WHAT HAPPENS ON ROUTERS LIKE JUPITER AND DEXs LIKE RAYDIUM,
+# THEY JUST BUILD IT INTO THE SWAP INSTRUCTIONS TO WRAP SOL TO WSOL
+# YOU CAN DO THIS YOURSELF, BUT IT'S A PAIN (AND FCKING SLOW, LIKE MAKING TOKEN ACCOUNTS)
+# ----
+# NO REALLY, READ THE ABOVE AND UNDERSTAND IT BEFORE WONDERING WHY YOU CAN'T GET A SUCCESSFUL SWAP!!!
 await executor.buy(
     amount=0.05
 )
