@@ -10,9 +10,6 @@ import utils.account_helpers
 import utils.layouts
 
 TOKEN_PROGRAM_ID = PublicKey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
-ALTERNATE_SERUM_ID = PublicKey.from_string(
-    "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
-)
 AMM_PROGRAM_ID = PublicKey.from_string("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8")
 
 
@@ -37,7 +34,8 @@ class RaydiumExecutor:
         self.client = Client(rpc_endpoint, commitment=Commitment("confirmed"))
         self.conn = AsyncClient(self.rpc_endpoint, commitment=Commitment("confirmed"))
         self.pool_keys = pool_keys
-        self.pool_pubkeys = {key: PublicKey.from_string(value) if isinstance(value,str) else value for key, value in pool_keys.items()}
+        self.pool_pubkeys = {key: PublicKey.from_string(value) if isinstance(value,str) else value for
+                             key, value in pool_keys.items()}
         self.serum_program_id = PublicKey.from_string("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX")
         self.owner = Keypair.from_base58_string(wallet_secret)
         self.wallet_address = wallet_address
@@ -54,7 +52,7 @@ class RaydiumExecutor:
             self.wallet_address,
             self.pool_keys["program_id"],
             self.pool_keys["quote_mint"],
-        ) # grabs the token account if it exists, otherwise makes it (this can take a while)
+        )  # grabs the token account if it exists, otherwise makes it (this can take a while)
 
     def make_swap_instruction(self,
                               amount_in: int,

@@ -67,7 +67,7 @@ def get_token_wallet_address_from_main_wallet_address(
     try:
         token_wallet_address_public_key = (
             spl_client.get_accounts_by_owner(
-                owner=main_wallet_address, commitment=None, encoding="base64"
+                owner=main_wallet_address, encoding="base64"
             )
             .value[0]
             .pubkey
@@ -77,8 +77,6 @@ def get_token_wallet_address_from_main_wallet_address(
         token_wallet_address_public_key = (
             spl_client.create_associated_token_account(
                 owner=main_wallet_address,
-                skip_confirmation=True,
-                recent_blockhash=None,
             )
         )
         print("WARNING: had to create a token account for the coin")
