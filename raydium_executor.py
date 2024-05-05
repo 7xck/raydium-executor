@@ -9,18 +9,16 @@ from solana.rpc.types import TxOpts
 import utils.account_helpers
 import utils.layouts
 
+#  some consts...
 TOKEN_PROGRAM_ID = PublicKey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
 AMM_PROGRAM_ID = PublicKey.from_string("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8")
+SRM_PROGRAM_ID = PublicKey.from_string("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX")
 
 
 class RaydiumExecutor:
     """
-    RaydiumExecutor is a class that allows you to interact with the Raydium AMM
-    rpc_endpoint: str: the rpc endpoint for the solana network
-    pool_id: str: the pool id for the AMM
-    wallet_secret: str: the secret key for the wallet
-    wallet_address: str: the public key for the wallet
-    pool_keys: dict: the keys for the pool. Can get from the Raydium API, or onchain.
+    RaydiumExecutor is a class that allows you to interact with the Raydium AMM by buying or selling
+    in a pool.
     """
     def __init__(self,
                  rpc_endpoint: str,
@@ -29,14 +27,22 @@ class RaydiumExecutor:
                  wallet_address: str,
                  pool_keys: dict
                  ):
+        """
+        :param rpc_endpoint: str: the rpc endpoint for the solana network
+        :param pool_id: str: the pool id for the AMM
+        :param wallet_secret: str: the secret key for the wallet
+        :param wallet_address: str: the public key for the wallet
+        :param pool_keys: dict: the keys for the pool. Can get from the Raydium API, or onchain.
+        """
         self.rpc_endpoint = rpc_endpoint
-        self.pool_id = pool_id  # string
+        self.pool_id = pool_id
         self.client = Client(rpc_endpoint, commitment=Commitment("confirmed"))
         self.conn = AsyncClient(self.rpc_endpoint, commitment=Commitment("confirmed"))
         self.pool_keys = pool_keys
-        self.pool_pubkeys = {key: PublicKey.from_string(value) if isinstance(value,str) else value for
-                             key, value in pool_keys.items()}
-        self.serum_program_id = PublicKey.from_string("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX")
+        self.pool_pubkeys = {key: PublicKey.from_string(value)
+                             if isinstance(value, str) else value
+                             for key, value in pool_keys.items()}
+        self.serum_program_id = SRM_PROGRAM_ID
         self.owner = Keypair.from_base58_string(wallet_secret)
         self.wallet_address = wallet_address
         self.wallet_secret = wallet_secret
@@ -76,9 +82,9 @@ class RaydiumExecutor:
             data=data
         )
 
-    async def buy(self, amount, decimals="quote_decimals"):
+    async def buy(self, amount: float, decimals: str = "quote_decimals"):
         """
-        :param amount: amount of tokens to buy (post-decimal) i.e. 0.5 sol or 1 sol
+        :param amount: amount of tokens to buy in the quote token (usually SOL)
         :param decimals: choose where
         to get the decimalisation from. i.e "quote_decimals" or "base_decimals". Default is "quote_decimals". It is
         included in the pool keys from raydium.
@@ -96,10 +102,10 @@ class RaydiumExecutor:
                 token_account_out=token_account_out
             )
         )
-        opts = TxOpts(skip_preflight=True)
-        await self.conn.send_transaction(swap_tx, *signers, opts=opts)
+        opts = TxOpts(skip_preflight=False)
+        return await self.conn.send_transaction(swap_tx, *signers, opts=opts)
 
-    async def sell(self, amount, decimals="base_decimals"):
+    async def sell(self, amount: float, decimals: str = "base_decimals"):
         swap_tx = Transaction()
         signers = [self.owner]
         token_account_in = self.base_token_account
@@ -112,7 +118,7 @@ class RaydiumExecutor:
                 token_account_out=token_account_out
             )
         )
-        opts = TxOpts(skip_preflight=True)
+        opts = TxOpts()
         return await self.conn.send_transaction(swap_tx, *signers, opts=opts)
 
     def format_accounts(self, token_account_in: PublicKey, token_account_out: PublicKey):
